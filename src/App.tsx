@@ -25,14 +25,14 @@ function App() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-slate-950 text-slate-100 flex items-center justify-center">
       {user ? (
         <MainLayout 
           sidebar={<Sidebar />}
         >
           {/* Правая часть: Окно чата (Контент) */}
           <div className="flex flex-col h-full">
-            <header className="h-16 border-b border-slate-800 flex items-center justify-between px-6 bg-slate-900/20">
+            <header className="h-16 border-b border-slate-800 flex items-center justify-between px-6 bg-slate-900/20 w-full">
               <div className="flex items-center gap-3">
                 {/* Аватарка-заглушка (скоро оживим) */}
                 <div className="w-10 h-10 rounded-full bg-sky-500/20 text-sky-400 flex items-center justify-center font-bold border border-sky-500/30">

@@ -35,3 +35,51 @@ export const getOrCreateChat = async (currentUserId: string, targetUserId: strin
 
   return newChat.id
 }
+// Описываем структуру, которую вернет .select()
+export interface SupabaseChatResponse {
+  chat_id: string
+  chats: {
+    id: string
+    type: 'direct' | 'group'
+    participants: {
+      user_id: string
+      profiles: {
+        id: string
+        username: string
+        avatar_url: string | null
+      }
+    }[]
+    messages: {
+      content: string
+      created_at: string
+      sender_id: string
+    }[]
+  } | null
+}
+
+export const getMyChats = async (userId: string) => {
+  const { data, error } = await supabase
+    .from('participants')
+    .select(`
+      chat_id,
+      chats (
+        id,
+        type,
+        participants (
+          user_id,
+          profiles (id, username, avatar_url)
+        ),
+        messages (
+          content,
+          created_at,
+          sender_id
+        )
+      )
+    `)
+    .eq('user_id', userId)
+    .order('created_at', { foreignTable: 'chats.messages', ascending: false })
+    .limit(1, { foreignTable: 'chats.messages' })
+
+  if (error) throw error
+  return (data as unknown) as SupabaseChatResponse[]
+}

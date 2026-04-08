@@ -22,7 +22,7 @@ export const MessageInput = ({ chatId }: { chatId: string }) => {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="p-4 bg-slate-900/50 border-t border-slate-800 flex gap-2">
+    <form onSubmit={handleSubmit} className="p-4 bg-slate-900/50 border-t border-slate-800 flex gap-2 w-full">
       <input
         type="text"
         value={text}
