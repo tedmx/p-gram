@@ -1,13 +1,25 @@
-export interface ChatParticipant {
-  user_id: string
-  profiles: {
-    id: string
-    username: string
-    avatar_url: string | null
-  }
+export interface Profile {
+  id: string
+  username: string
+  avatar_url: string | null
 }
 
-export interface MyChat {
+export interface Message {
+  id: string
+  chat_id: string
+  sender_id: string
+  content: string
+  created_at: string
+}
+
+export interface Chat {
+  id: string
+  type: 'direct' | 'group'
+  created_at: string
+}
+
+// Тип для отображения в списке чатов (уже нормализованный)
+export interface ChatPreview {
   chat_id: string
   title: string
   type: 'direct' | 'group'

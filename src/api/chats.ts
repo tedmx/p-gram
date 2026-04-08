@@ -81,5 +81,21 @@ export const getMyChats = async (userId: string) => {
     .limit(1, { foreignTable: 'chats.messages' })
 
   if (error) throw error
-  return (data as unknown) as SupabaseChatResponse[]
+  return (data as any[]).map(item => {
+    const chat = item.chats
+    const partner = chat.participants.find((p: any) => p.user_id !== userId)?.profiles
+    const lastMsg = chat.messages?.[0]
+
+    return {
+      chat_id: item.chat_id,
+      title: partner?.username || 'Неизвестный',
+      type: chat.type,
+      avatar_url: partner?.avatar_url || null,
+      lastMessage: lastMsg ? {
+        content: lastMsg.content,
+        createdAt: lastMsg.created_at,
+        senderId: lastMsg.sender_id
+      } : null
+    }
+  })
 }
