@@ -52,14 +52,17 @@ function App() {
               </button>
             </header>
             
-            <div className="flex-1 flex flex-col items-center justify-center text-slate-600 w-full">
-              <div className="mb-4 opacity-20">
-                <img src="/tg.jpg" alt="pattern" className="w-24 h-24 rounded-full grayscale" />
-              </div>
+            <div className="flex-1 flex flex-col relative telegram-bg-container w-full overflow-hidden bg-slate-950">
               {activeChatId ? (
                 <>
-                  <MessageList chatId={activeChatId} />
-                  <MessageInput chatId={activeChatId} />
+                  {/* Контейнер для списка, чтобы он был поверх фона */}
+                  <div className="flex-1 relative z-10 overflow-y-auto w-full">
+                    <MessageList chatId={activeChatId} />
+                  </div>
+                  {/* Поле ввода тоже поверх фона */}
+                  <div className="relative z-10 w-full bg-slate-900/50 backdrop-blur-lg">
+                    <MessageInput chatId={activeChatId} />
+                  </div>
                 </>
               ) : (
                 <div className="flex-1 flex flex-col items-center justify-center text-slate-600">

@@ -1,1 +1,29 @@
 @import "tailwindcss";
+
+.telegram-bg-container {
+  position: relative;
+  overflow: hidden;
+}
+
+.telegram-bg-container::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0; /* Фон в самый низ */
+  opacity: 0.3; /* Можно подкрутить под свой вкус */
+  
+  /* Твой градиент */
+  background: linear-gradient(145deg, #4f5bd5 0%, #962fbf 35%, #dd6cb9 65%, #fec496 100%);
+  
+  /* Маска с паттерном */
+  -webkit-mask-image: url('/chat-bg-pattern.svg');
+  mask-image: url('/chat-bg-pattern.svg');
+  -webkit-mask-repeat: repeat;
+  mask-repeat: repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
+  -webkit-mask-size: 430px auto;
+  mask-size: 430px auto;
+  
+  pointer-events: none;
+}
