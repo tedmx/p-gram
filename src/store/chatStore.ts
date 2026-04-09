@@ -6,10 +6,17 @@ interface ChatData {
   avatar_url?: string | null
 }
 
+interface EditingMessage {
+  id: string
+  content: string
+}
+
 interface ChatState {
   activeChatId: string | null
   activeChatData: ChatData | null
   setActiveChat: (chatId: string | null, data?: ChatData | null) => void
+  editingMessage: EditingMessage | null
+  setEditingMessage: (msg: EditingMessage | null) => void
 }
 
 export const useChatStore = create<ChatState>((set) => ({
@@ -19,4 +26,6 @@ export const useChatStore = create<ChatState>((set) => ({
     activeChatId: chatId, 
     activeChatData: data 
   }),
+  editingMessage: null,
+  setEditingMessage: (msg) => set({ editingMessage: msg }),
 }))

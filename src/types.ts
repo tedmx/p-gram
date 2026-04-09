@@ -1,3 +1,6 @@
+import type { BaseEditor } from 'slate'
+import { ReactEditor } from 'slate-react'
+
 export interface Profile {
   id: string
   username: string
@@ -29,4 +32,15 @@ export interface ChatPreview {
     createdAt: string
     senderId: string
   } | null
+}
+
+export type CustomElement = { type: 'paragraph'; children: CustomText[] }
+export type CustomText = { text: string }
+
+declare module 'slate' {
+  interface CustomTypes {
+    Editor: BaseEditor & ReactEditor
+    Element: CustomElement
+    Text: CustomText
+  }
 }

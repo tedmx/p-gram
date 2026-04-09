@@ -22,3 +22,19 @@ export const sendMessage = async (chatId: string, senderId: string, content: str
 
   if (error) throw error
 }
+
+export const updateMessage = async (messageId: string, content: string) => {
+  const { data, error } = await supabase
+    .from('messages')
+    .update({ 
+      content, 
+      is_edited: true, // Хорошая практика — помечать измененные сообщения
+      updated_at: new Date().toISOString() 
+    })
+    .eq('id', messageId)
+    .select()
+    .single()
+
+  if (error) throw error
+  return data
+}

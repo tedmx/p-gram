@@ -60,8 +60,8 @@ function App() {
                     <MessageList chatId={activeChatId} />
                   </div>
                   {/* Поле ввода тоже поверх фона */}
-                  <div className="relative z-10 w-full bg-slate-900/50 backdrop-blur-lg">
-                    <MessageInput chatId={activeChatId} />
+                  <div className="relative z-10 w-full px-5 mb-5">
+                    <MessageInput chatId={activeChatId} key={activeChatId}/>
                   </div>
                 </>
               ) : (
