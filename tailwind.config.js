@@ -7,7 +7,6 @@ export default {
   theme: {
     extend: {
       colors: {
-        // Тот самый синий цвет Telegram для будущего
         tg: {
           blue: '#0088cc',
           light: '#6abfef'

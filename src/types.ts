@@ -5,6 +5,7 @@ export interface Profile {
   id: string
   username: string
   avatar_url: string | null
+  avatar_color: string | null
 }
 
 export interface Message {
@@ -19,14 +20,17 @@ export interface Chat {
   id: string
   type: 'direct' | 'group'
   created_at: string
+  participants: Profile[]
 }
 
 // Тип для отображения в списке чатов (уже нормализованный)
 export interface ChatPreview {
   chat_id: string
   title: string
-  type: 'direct' | 'group'
+  type: 'direct' | 'group' | 'channel'
   avatar_url: string | null
+  avatar_color?: string | null
+  participants?: Profile[]
   lastMessage: {
     content: string
     createdAt: string

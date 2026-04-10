@@ -32,6 +32,7 @@ export const MessageInput = ({ chatId }: { chatId: string }) => {
     mutationFn: (content: string) => sendMessage(chatId, currentUser!.id, content),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['messages', chatId] })
+      queryClient.invalidateQueries({ queryKey: ['my-chats'] })
     }
   })
 
@@ -40,6 +41,7 @@ export const MessageInput = ({ chatId }: { chatId: string }) => {
       updateMessage(id, content),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['messages', chatId] })
+      queryClient.invalidateQueries({ queryKey: ['my-chats'] })
     }
   })
 
@@ -101,7 +103,7 @@ export const MessageInput = ({ chatId }: { chatId: string }) => {
   ])
 
   return (
-    <div className="mx-auto flex flex-col w-full max-w-[45.5rem] [@media(min-width:1921px)]:max-w-[50vw] bg-slate-800 rounded-2xl ">
+    <div className="mx-auto flex flex-col w-full max-w-[45.5rem] [@media(min-width:1921px)]:max-w-[50vw] bg-white dark:bg-slate-800 rounded-2xl ">
       {editingMessage && (
         <div className="flex items-center gap-3 px-6 py-2 bg-slate-800/50 border-b border-slate-700/50 animate-in slide-in-from-bottom-2">
           <div className="text-sky-500">
@@ -138,7 +140,7 @@ export const MessageInput = ({ chatId }: { chatId: string }) => {
         >
           <Editable
             placeholder="Напишите сообщение..."
-            className="flex-1 max-h-60 overflow-y-auto outline-none py-1 text-sm text-slate-200"
+            className="flex-1 max-h-60 overflow-y-auto outline-none py-1 text-sm text-slate-900 dark:text-slate-200"
             onKeyDown={handleKeyDown}
           />
         </Slate>

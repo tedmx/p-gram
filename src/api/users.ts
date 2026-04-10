@@ -5,7 +5,7 @@ export const searchUsers = async (query: string) => {
 
   const { data, error } = await supabase
     .from('profiles')
-    .select('id, username, avatar_url')
+    .select('id, username, avatar_url, avatar_color')
     .ilike('username', `%${query}%`)
     .limit(10)
 

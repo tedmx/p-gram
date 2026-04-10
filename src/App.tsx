@@ -6,16 +6,49 @@ import { Sidebar } from './components/layout/Sidebar'
 import { MessageList } from './components/chat/MessageList'
 import { MessageInput } from './components/chat/MessageInput'
 import { useChatStore } from './store/chatStore'
+import { useEffect, useMemo, useState } from 'react'
+import { Modal } from './components/ui/Modal'
+import { useLocation, useNavigate } from 'react-router-dom'
 
 function App() {
   useAuth() // Запускаем отслеживание сессии
   
   const { user, isLoading } = useAuthStore()
-  const { activeChatId, activeChatData } = useChatStore()
+  const { activeChatId, activeChatData, setActiveChat } = useChatStore()
+  const [isChatInfoOpen, setIsChatInfoOpen] = useState(false)
+  const navigate = useNavigate()
+  const location = useLocation()
+
+  const chatPartner = useMemo(() => {
+    if (!activeChatData || !user) return null
+    if (activeChatData.type !== 'direct') return null
+    return activeChatData.participants?.find((participant) => participant.id !== user.id) || null
+  }, [activeChatData, user])
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape') return
+      if (!activeChatId) return
+
+      setActiveChat(null)
+      setIsChatInfoOpen(false)
+      navigate('/')
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [activeChatId, navigate, setActiveChat])
+
+  useEffect(() => {
+    if (location.pathname === '/' && activeChatId) {
+      setActiveChat(null)
+      setIsChatInfoOpen(false)
+    }
+  }, [activeChatId, location.pathname, setActiveChat])
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-950 text-white">
+      <div className="min-h-screen flex items-center justify-center bg-slate-950 text-slate-800 dark:text-white">
         <div className="flex flex-col items-center gap-4">
           <div className="w-8 h-8 border-4 border-sky-500 border-t-transparent rounded-full animate-spin" />
           <p className="text-slate-400 font-medium animate-pulse">Загрузка P-gram...</p>
@@ -25,34 +58,37 @@ function App() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex items-center justify-center">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100 flex items-center justify-center">
       {user ? (
         <MainLayout 
           sidebar={<Sidebar />}
         >
           {/* Правая часть: Окно чата (Контент) */}
           <div className="flex flex-col h-full">
-            <header className="h-16 border-b border-slate-800 flex items-center justify-between px-6 bg-slate-900/20 w-full">
-              <div className="flex items-center gap-3">
-                {/* Аватарка-заглушка (скоро оживим) */}
-                <div className="w-10 h-10 rounded-full bg-sky-500/20 text-sky-400 flex items-center justify-center font-bold border border-sky-500/30">
-                  {activeChatData?.title?.[0].toUpperCase() || '?'}
-                </div>
-                <div>
-                  <div className="text-sm font-semibold">{activeChatData?.title || 'Чат'}</div>
-                  <div className="text-[10px] text-emerald-500">в сети</div>
-                </div>
-              </div>
-              
-              <button 
-                className="text-xs text-slate-500 hover:text-red-400 transition-colors"
-                onClick={() => import('./api/supabase').then(m => m.supabase.auth.signOut())}
-              >
-                Выйти из системы
-              </button>
-            </header>
+            {activeChatId && (
+              <header className="h-16 border-b dark:border-slate-800 bg-white dark:bg-slate-900/20 w-full">
+                <button
+                  type="button"
+                  onClick={() => activeChatData && setIsChatInfoOpen(true)}
+                  disabled={!activeChatData}
+                  className="w-full h-full flex items-center gap-3 px-6 text-left transition-colors hover:bg-slate-100/80 dark:hover:bg-slate-800/40 disabled:opacity-60 disabled:cursor-not-allowed"
+                >
+                  {/* Аватарка-заглушка (скоро оживим) */}
+                  <div
+                    className="w-10 h-10 rounded-full text-white flex items-center justify-center font-bold border border-white/40 dark:border-sky-500/30"
+                    style={{ backgroundColor: activeChatData?.avatar_color || '#8ECAE6' }}
+                  >
+                    {activeChatData?.title?.[0].toUpperCase() || '?'}
+                  </div>
+                  <div className="text-left">
+                    <div className="text-sm text-slate-800 dark:text-slate-100 font-semibold">{activeChatData?.title || 'Чат'}</div>
+                    <div className="text-[10px] text-emerald-500">в сети</div>
+                  </div>
+                </button>
+              </header>
+            )}
             
-            <div className="flex-1 flex flex-col relative telegram-bg-container w-full overflow-hidden bg-slate-950">
+            <div className="flex-1 flex flex-col relative telegram-bg-container w-full overflow-hidden bg-blue-200 dark:bg-slate-950">
               {activeChatId ? (
                 <>
                   {/* Контейнер для списка, чтобы он был поверх фона */}
@@ -71,6 +107,45 @@ function App() {
               )}
             </div>
           </div>
+          <Modal
+            isOpen={isChatInfoOpen}
+            onClose={() => setIsChatInfoOpen(false)}
+            title={activeChatData?.title || 'Информация о чате'}
+            hideTitle
+            showCloseButton
+          >
+            <div className="flex flex-col items-center text-center gap-4 pt-1">
+              <div
+                className="w-20 h-20 rounded-full text-white flex items-center justify-center text-3xl font-bold border border-slate-200 dark:border-sky-500/30"
+                style={{ backgroundColor: chatPartner?.avatar_color || activeChatData?.avatar_color || '#8ECAE6' }}
+              >
+                {(chatPartner?.username || activeChatData?.title || '?')[0].toUpperCase()}
+              </div>
+
+              <div className="text-base font-semibold text-slate-900 dark:text-slate-100">
+                {chatPartner?.username || activeChatData?.title || 'Неизвестный'}
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setIsChatInfoOpen(false)}
+                className="inline-flex items-center gap-2 rounded-xl px-4 py-2 bg-sky-500 hover:bg-sky-600 text-white text-sm font-medium transition-colors"
+              >
+                <svg
+                  className="w-4 h-4"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                </svg>
+                <span>Написать</span>
+              </button>
+            </div>
+          </Modal>
         </MainLayout>
       ) : (
         <AuthForm />

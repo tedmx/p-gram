@@ -3,10 +3,12 @@ type Position = { x: number; y: number }
 export const MessageContextMenu = ({ 
   position, 
   onEdit, 
+  onDelete, 
   onClose 
 }: { 
   position: Position
   onEdit: () => void
+  onDelete: () => void
   onClose: () => void 
 }) => {
 
@@ -18,8 +20,9 @@ export const MessageContextMenu = ({
       <div className="fixed inset-0 z-40" onClick={onClose} />
       <div 
         className={`
-          fixed z-50 min-w-[160px] bg-slate-800/90 backdrop-blur-xl 
-          border border-slate-700/50 rounded-xl shadow-2xl p-1.5
+          fixed z-50 min-w-[160px] bg-white/95 text-slate-800 backdrop-blur-xl
+          dark:bg-slate-800/90 dark:text-slate-200
+          border border-slate-200 dark:border-slate-700/50 rounded-xl shadow-2xl p-1.5
           origin-top-left transition-all duration-150 ease-out
           scale-100 opacity-100 animate-in fade-in zoom-in-95
         `}
@@ -27,16 +30,17 @@ export const MessageContextMenu = ({
       >
         <button 
           onClick={() => { onEdit(); onClose() }}
-          className="w-full text-left px-3 py-2 text-sm hover:bg-sky-500/20 text-slate-200 rounded-lg flex items-center justify-between group transition-colors"
+          className="w-full text-left px-3 py-2 text-sm hover:bg-sky-100 dark:hover:bg-sky-500/20 text-slate-700 dark:text-slate-200 rounded-lg flex items-center justify-between group transition-colors"
         >
           <span>Редактировать</span>
           <span className="opacity-40 group-hover:opacity-100">✏️</span>
         </button>
         
-        <div className="h-px bg-slate-700/50 my-1 mx-1" />
+        <div className="h-px bg-slate-200 dark:bg-slate-700/50 my-1 mx-1" />
         
         <button 
-          className="w-full text-left px-3 py-2 text-sm hover:bg-red-500/20 text-red-400 rounded-lg flex items-center justify-between group transition-colors"
+          onClick={() => { onDelete(); onClose() }}
+          className="w-full text-left px-3 py-2 text-sm hover:bg-red-100 dark:hover:bg-red-500/20 text-red-600 dark:text-red-400 rounded-lg flex items-center justify-between group transition-colors"
         >
           <span>Удалить</span>
           <span className="opacity-40 group-hover:opacity-100">🗑️</span>

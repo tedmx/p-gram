@@ -40,13 +40,14 @@ export interface SupabaseChatResponse {
   chat_id: string
   chats: {
     id: string
-    type: 'direct' | 'group'
+    type: 'direct' | 'group' | 'channel'
     participants: {
       user_id: string
       profiles: {
         id: string
         username: string
         avatar_url: string | null
+        avatar_color: string | null
       }
     }[]
     messages: {
@@ -67,7 +68,7 @@ export const getMyChats = async (userId: string) => {
         type,
         participants (
           user_id,
-          profiles (id, username, avatar_url)
+          profiles (id, username, avatar_url, avatar_color)
         ),
         messages (
           content,
@@ -91,6 +92,8 @@ export const getMyChats = async (userId: string) => {
       title: partner?.username || 'Неизвестный',
       type: chat.type,
       avatar_url: partner?.avatar_url || null,
+      avatar_color: partner?.avatar_color || null,
+      participants: chat.participants?.map((p: any) => p.profiles).filter(Boolean) || [],
       lastMessage: lastMsg ? {
         content: lastMsg.content,
         createdAt: lastMsg.created_at,

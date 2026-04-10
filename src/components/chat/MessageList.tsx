@@ -1,9 +1,10 @@
-import { useQuery } from '@tanstack/react-query'
-import { getMessages } from '../../api/messages'
+import { useQuery, useMutation, useQueryClient  } from '@tanstack/react-query'
 import { useAuthStore } from '../../store/authStore'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useChatStore } from '../../store/chatStore'
 import { MessageContextMenu } from './MessageContextMenu'
+import { getMessages, deleteMessage } from '../../api/messages'
+import { Modal } from '../ui/Modal'
 
 interface MessageListProps {
   chatId: string
@@ -11,9 +12,12 @@ interface MessageListProps {
 
 export const MessageList = ({ chatId }: MessageListProps) => {
   const currentUser = useAuthStore(state => state.user)
+  const queryClient = useQueryClient()
+
   const { editingMessage, setEditingMessage } = useChatStore()
   const [menuPosition, setMenuPosition] = useState<{ x: number, y: number, msg: any } | null>(null)
-
+  const [messageToDelete, setMessageToDelete] = useState<any | null>(null)
+  const [deleteForEveryone, setDeleteForEveryone] = useState(false)
 
   const handleContextMenu = (e: React.MouseEvent, msg: any) => {
     e.preventDefault()
@@ -26,6 +30,15 @@ export const MessageList = ({ chatId }: MessageListProps) => {
     refetchInterval: 3000 // Временный "поллинг" каждые 3 сек, пока не включим Realtime
   })
 
+  const { mutate: handleDelete } = useMutation({
+    mutationFn: (id: string) => deleteMessage(id),
+    onSuccess: () => {
+      // Инвалидируем кеш, чтобы сообщение исчезло из списка
+      queryClient.invalidateQueries({ queryKey: ['messages', chatId] })
+      queryClient.invalidateQueries({ queryKey: ['my-chats'] })
+    }
+  })
+
   const scrollRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -35,6 +48,17 @@ export const MessageList = ({ chatId }: MessageListProps) => {
     }
   }, [messages])
 
+  const { activeChatData } = useChatStore() // Достаем данные текущего чата
+  const chatPartnerName = useMemo(() => {
+    if (!activeChatData || !currentUser) return 'собеседника'
+    
+    // Ищем участника, который не является текущим пользователем
+    const partner = activeChatData.participants?.find(
+      (p: any) => p.id !== currentUser.id
+    )
+    
+    return partner?.username || 'собеседника'
+  }, [activeChatData, currentUser])
 
   if (isLoading) return <div className="p-4 text-slate-500 text-center">Загрузка сообщений...</div>
 
@@ -55,14 +79,20 @@ export const MessageList = ({ chatId }: MessageListProps) => {
               <div className={`
                 max-w-[70%] rounded-2xl px-4 py-2 relative group transition-all duration-300
                 ${isMine 
-                  ? 'bg-sky-600 text-white rounded-br-none' 
-                  : 'bg-slate-800 text-slate-200 rounded-bl-none'}
-                ${editingMessage?.id === msg.id ? 'ring-2 ring-sky-400 ring-offset-2 ring-offset-slate-900 shadow-[0_0_15px_rgba(56,189,248,0.3)]' : ''}
+                  ? 'bg-green-100 text-slate-900 dark:bg-sky-600 dark:text-white rounded-br-none' 
+                  : 'bg-white text-slate-900 dark:bg-slate-800 dark:text-slate-200 rounded-bl-none'}
+                ${
+                  editingMessage?.id === msg.id
+                    ? 'ring-2 ring-sky-400 ring-offset-2 ring-offset-slate-900 shadow-[0_0_15px_rgba(56,189,248,0.3)]'
+                    : ''
+                }
               `}>
                 <span>{msg.content}</span>
                 <div className={`
                   float-right mt-2 ml-2 flex items-center gap-1
-                  ${isMine ? 'text-sky-200/70' : 'text-slate-500'}
+                  ${isMine
+                    ? 'text-green-600 dark:text-sky-200/70'
+                    : 'text-slate-400 dark:text-slate-500'}
                 `}>
                   {msg.is_edited && (
                     <span
@@ -86,8 +116,52 @@ export const MessageList = ({ chatId }: MessageListProps) => {
             position={{ x: menuPosition.x, y: menuPosition.y }}
             onClose={() => setMenuPosition(null)}
             onEdit={() => setEditingMessage({ id: menuPosition.msg.id, content: menuPosition.msg.content })}
+            onDelete={() => {
+              setMessageToDelete(menuPosition.msg.id)
+              setMenuPosition(null)
+            }}
           />
         )}
+        <Modal
+          isOpen={!!messageToDelete} 
+          onClose={() => setMessageToDelete(null)} 
+          title="Удаление сообщения"
+        >
+          <p className="text-slate-400 text-sm mb-6">
+            Вы уверены, что хотите удалить это сообщение?
+          </p>
+
+          {/* Чекбокс */}
+          <label className="flex items-center gap-3 mb-8 cursor-pointer group">
+            <input 
+              type="checkbox" 
+              checked={deleteForEveryone}
+              onChange={(e) => setDeleteForEveryone(e.target.checked)}
+              className="w-5 h-5 rounded border-slate-700 bg-slate-800 text-sky-500 focus:ring-sky-500/20"
+            />
+            <span className="text-sm text-slate-300 group-hover:text-white transition-colors">
+              Также удалить для {chatPartnerName} {/* Имя возьми из данных чата */}
+            </span>
+          </label>
+
+          <div className="flex justify-end gap-3">
+            <button 
+              onClick={() => setMessageToDelete(null)}
+              className="px-4 py-2 text-sm font-medium text-slate-400 hover:text-white transition-colors"
+            >
+              Отмена
+            </button>
+            <button 
+              onClick={() => {
+                handleDelete(messageToDelete)
+                setMessageToDelete(null)
+              }}
+              className="px-6 py-2 bg-red-500 hover:bg-red-600 text-white text-sm font-bold rounded-xl transition-colors"
+            >
+              Удалить
+            </button>
+          </div>
+        </Modal>
       </div>
     </div>
   )
