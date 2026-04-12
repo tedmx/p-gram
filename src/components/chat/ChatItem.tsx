@@ -1,10 +1,12 @@
-import { useChatStore } from '../../store/chatStore'
 import { useNavigate } from 'react-router-dom'
 
-import { type ChatPreview } from '../../types'
+import { useChatStore } from '../../store/chatStore'
+import { type UiChat } from '../../types'
+import { AvatarFallback } from '../ui/AvatarFallback'
+import { EmojiText } from '../ui/EmojiText'
 
 interface ChatItemProps {
-  chat: ChatPreview
+  chat: UiChat
   isActive: boolean
   currentUserId: string | undefined
 }
@@ -12,10 +14,10 @@ interface ChatItemProps {
 export const ChatItem = ({ chat, isActive, currentUserId }: ChatItemProps) => {
   const setActiveChat = useChatStore(state => state.setActiveChat)
   const navigate = useNavigate()
-  const isMyLastMessage = chat.lastMessage?.senderId === currentUserId
-  
-  const time = chat.lastMessage 
-    ? new Date(chat.lastMessage.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+  const isMyLastMessage = chat.lastMessage?.sender_id === currentUserId
+
+  const time = chat.lastMessage
+    ? new Date(chat.lastMessage.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     : ''
 
   return (
@@ -36,19 +38,20 @@ export const ChatItem = ({ chat, isActive, currentUserId }: ChatItemProps) => {
           : 'hover:dark:bg-slate-800/50 hover:bg-slate-300/50 text-slate-300'
       }`}
     >
-      <div
-        className="w-12 h-12 rounded-full shrink-0 flex items-center justify-center font-bold text-white text-xl"
-        style={{ backgroundColor: chat.avatar_color || '#8ECAE6' }}
-      >
-        {chat.title[0].toUpperCase()}
-      </div>
+      <AvatarFallback
+        label={chat.title}
+        backgroundColor={chat.avatar_color}
+        className="w-12 h-12 shrink-0 text-xl"
+      />
 
       <div className="flex-1 min-w-0 flex flex-col gap-0.5">
         <div className="flex justify-between items-center gap-2">
           <span className={`
             text-sm font-semibold truncate
             ${isActive ? 'text-white' : 'text-slate-800 dark:text-sky-400'}
-          `}>{chat.title}</span>
+          `}>
+            <EmojiText text={chat.title} />
+          </span>
           <div className="flex items-center gap-1 shrink-0">
             {isMyLastMessage && (
               <svg className={`w-4 h-4 ${isActive ? 'text-sky-100' : 'text-sky-500'}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -62,9 +65,13 @@ export const ChatItem = ({ chat, isActive, currentUserId }: ChatItemProps) => {
         </div>
         <div className={`
           text-[13px] truncate
-          ${isActive ? 'white' : 'text-slate-500'}
+          ${isActive ? 'text-white' : 'text-slate-500'}
         `}>
-          {chat.lastMessage?.content || 'Нет сообщений'}
+          {chat.lastMessage?.content ? (
+            <EmojiText text={chat.lastMessage.content} />
+          ) : (
+            'Нет сообщений'
+          )}
         </div>
       </div>
     </div>

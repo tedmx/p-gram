@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+/* Tailwind v4 uses prefers-color-scheme by default for dark mode */
+
 .telegram-bg-container {
   position: relative;
   overflow: hidden;
@@ -9,13 +11,9 @@
   content: "";
   position: absolute;
   inset: 0;
-  z-index: 0; /* Фон в самый низ */
-  opacity: 0.3; /* Можно подкрутить под свой вкус */
-  
-  /* Твой градиент */
+  z-index: 0;
+  opacity: 0.3;
   background: linear-gradient(145deg, #4f5bd5 0%, #962fbf 35%, #dd6cb9 65%, #fec496 100%);
-  
-  /* Маска с паттерном */
   -webkit-mask-image: url('/chat-bg-pattern.svg');
   mask-image: url('/chat-bg-pattern.svg');
   -webkit-mask-repeat: repeat;
@@ -24,6 +22,135 @@
   mask-position: center;
   -webkit-mask-size: 430px auto;
   mask-size: 430px auto;
-  
   pointer-events: none;
+}
+
+/* Telegram Desktop Layout System */
+
+/* Container styles */
+.telegram-layout-container {
+  --dynamic-sidebar-width: 499px;
+  --left-column-min-width: 16rem;
+  --left-column-max-width: 40vw;
+  
+  display: grid;
+  grid-template-columns: var(--dynamic-sidebar-width) 1fr;
+  grid-template-rows: 100%;
+  height: 100vh;
+  width: 100%;
+}
+
+/* Left column (sidebar) */
+.telegram-left-column {
+  width: var(--dynamic-sidebar-width);
+  min-width: var(--left-column-min-width);
+  max-width: var(--left-column-max-width);
+  height: 100%;
+  flex-shrink: 0;
+}
+
+/* Main column (chat area) */
+.telegram-main-column {
+  position: relative;
+  min-width: 0; /* Prevent overflow */
+}
+
+/* Resize handle - positioned at LEFT edge of chat window, inside main column */
+.telegram-resize-handle {
+  cursor: ew-resize;
+  position: absolute;
+  z-index: 100;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 0.25rem;
+  background: transparent;
+  transition: background-color 0.2s;
+}
+
+.telegram-resize-handle:hover {
+  background: rgba(56, 189, 248, 0.3);
+}
+
+.telegram-layout-container.is-resizing .telegram-resize-handle {
+  background: rgba(56, 189, 248, 0.5);
+}
+
+/* ========== BREAKPOINTS ========== */
+
+/* ≥1276px: Full Telegram Desktop - resizable sidebar, resizer visible */
+/* Base styles already handle this case */
+@media (min-width: 1276px) {
+  .telegram-resize-handle {
+    display: block;
+  }
+}
+
+/* 926px - 1275px: Adaptive growing sidebar */
+@media (min-width: 926px) and (max-width: 1275px) {
+  .telegram-layout-container {
+    grid-template-columns: minmax(16rem, 40vw) 1fr;
+  }
+  
+  .telegram-left-column {
+    width: auto;
+    min-width: var(--left-column-min-width);
+    max-width: var(--left-column-max-width);
+  }
+  
+  .telegram-resize-handle {
+    display: none;
+  }
+}
+
+/* 601px - 925px: Fixed sidebar width (424px) */
+@media (min-width: 601px) and (max-width: 925px) {
+  .telegram-layout-container {
+    grid-template-columns: 424px 1fr;
+  }
+  
+  .telegram-left-column {
+    width: 424px !important;
+    min-width: 424px !important;
+    max-width: 424px !important;
+  }
+  
+  .telegram-resize-handle {
+    display: none;
+  }
+}
+
+/* ≤600px: Mobile-like mode - sidebar OR chat takes full screen */
+@media (max-width: 600px) {
+  .telegram-layout-container {
+    grid-template-columns: 1fr;
+  }
+
+  .telegram-left-column {
+    width: 100% !important;
+    min-width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  /* On mobile, sidebar shows by default when no chat is open */
+  .telegram-left-column {
+    display: flex;
+  }
+
+  .telegram-main-column {
+    display: none;
+  }
+
+  /* When chat is open, show chat panel and hide sidebar */
+  .telegram-layout-container.chat-open .telegram-left-column {
+    display: none;
+  }
+
+  .telegram-layout-container.chat-open .telegram-main-column {
+    display: flex;
+  }
+
+  .telegram-resize-handle {
+    display: none;
+  }
 }

@@ -1,18 +1,19 @@
-import { useEffect, useMemo, useState } from 'react'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { searchUsers } from '../../api/users'
+import { useState } from 'react'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useNavigate } from 'react-router-dom'
 
-import { useAuthStore } from '../../store/authStore'
 import { getMyChats, getOrCreateChat } from '../../api/chats'
-import { useMutation } from '@tanstack/react-query'
-import { useChatStore } from '../../store/chatStore' 
+import { searchUsers } from '../../api/users'
+import { useAuthStore } from '../../store/authStore'
+import { useChatRouteSync } from '../../hooks/useChatRouteSync'
+import { useChatStore } from '../../store/chatStore'
+import { AvatarFallback } from '../ui/AvatarFallback'
+import { EmojiText } from '../ui/EmojiText'
 import { ChatItem } from '../chat/ChatItem'
-import { useLocation, useNavigate } from 'react-router-dom'
 
 export const Sidebar = () => {
   const [searchQuery, setSearchQuery] = useState('')
   const queryClient = useQueryClient()
-  const location = useLocation()
   const navigate = useNavigate()
 
   const currentUser = useAuthStore(state => state.user)
@@ -30,6 +31,8 @@ export const Sidebar = () => {
     queryFn: () => getMyChats(currentUser!.id),
     enabled: !!currentUser
   })
+
+  useChatRouteSync(myChats)
 
   const { mutate: handleSelectUser } = useMutation({
     mutationFn: (targetUser: { id: string, username: string, avatar_color?: string | null, avatar_url?: string | null }) => {
@@ -54,49 +57,15 @@ export const Sidebar = () => {
     }
   })
 
-  const chatIdFromPath = useMemo(() => {
-    const match = location.pathname.match(/^\/chat\/([^/]+)$/)
-    return match?.[1] || null
-  }, [location.pathname])
-
-  useEffect(() => {
-    if (!myChats) return
-
-    if (!chatIdFromPath) {
-      if (activeChatId) {
-        setActiveChat(null)
-      }
-      return
-    }
-
-    const targetChat = myChats.find((chat) => chat.chat_id === chatIdFromPath)
-
-    if (!targetChat) {
-      setActiveChat(null)
-      navigate('/', { replace: true })
-      return
-    }
-
-    if (activeChatId === targetChat.chat_id) return
-
-    setActiveChat(targetChat.chat_id, {
-      title: targetChat.title,
-      type: targetChat.type,
-      avatar_url: targetChat.avatar_url,
-      avatar_color: targetChat.avatar_color,
-      participants: targetChat.participants,
-    })
-  }, [activeChatId, chatIdFromPath, myChats, navigate, setActiveChat])
-
   return (
     <div className="flex flex-col h-full">
-      <div className="p-4 border-b dark:border-slate-800">
+      <div className="p-4">
         <input 
           type="text"
           placeholder="Поиск людей..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="w-full bg-white dark:bg-slate-800 border-none rounded-lg px-4 py-2 text-sm focus:ring-1 focus:ring-sky-500 outline-none transition-all placeholder-slate-400"
+          className="w-full bg-slate-100 dark:bg-slate-800 border-none rounded-full px-4 py-2.5 text-sm focus:ring-1 focus:ring-sky-500 outline-none transition-all placeholder-slate-400 text-slate-900 dark:text-slate-200"
         />
       </div>
 
@@ -118,14 +87,13 @@ export const Sidebar = () => {
                     avatar_url: user.avatar_url,
                   })}
                 >
-                  <div
-                    className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold border border-transparent"
-                    style={{ backgroundColor: user.avatar_color || '#8ECAE6' }}
-                  >
-                    {user.username?.[0].toUpperCase() || '?'}
-                  </div>
+                  <AvatarFallback
+                    label={user.username ?? '?'}
+                    backgroundColor={user.avatar_color}
+                    className="w-10 h-10 border border-transparent"
+                  />
                   <div className="text-sm font-medium group-hover:text-sky-400 transition-colors">
-                    {user.username}
+                    <EmojiText text={user.username} />
                   </div>
                 </div>
               ))

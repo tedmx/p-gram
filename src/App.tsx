@@ -7,6 +7,8 @@ import { MessageList } from './components/chat/MessageList'
 import { MessageInput } from './components/chat/MessageInput'
 import { useChatStore } from './store/chatStore'
 import { useEffect, useMemo, useState } from 'react'
+import { AvatarFallback } from './components/ui/AvatarFallback'
+import { EmojiText } from './components/ui/EmojiText'
 import { Modal } from './components/ui/Modal'
 import { useLocation, useNavigate } from 'react-router-dom'
 
@@ -41,8 +43,10 @@ function App() {
 
   useEffect(() => {
     if (location.pathname === '/' && activeChatId) {
-      setActiveChat(null)
-      setIsChatInfoOpen(false)
+      setTimeout(() => {
+        setActiveChat(null)
+        setIsChatInfoOpen(false)
+      })
     }
   }, [activeChatId, location.pathname, setActiveChat])
 
@@ -62,26 +66,42 @@ function App() {
       {user ? (
         <MainLayout 
           sidebar={<Sidebar />}
+          isChatOpen={!!activeChatId}
         >
           {/* Правая часть: Окно чата (Контент) */}
           <div className="flex flex-col h-full">
             {activeChatId && (
-              <header className="h-16 border-b dark:border-slate-800 bg-white dark:bg-slate-900/20 w-full">
+              <header className="h-16 bg-white dark:bg-slate-900 w-full flex items-center">
+                {/* Back button - visible only on mobile */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveChat(null)
+                    setIsChatInfoOpen(false)
+                    navigate('/')
+                  }}
+                  className="xl:hidden w-14 h-full flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+                  </svg>
+                </button>
+
                 <button
                   type="button"
                   onClick={() => activeChatData && setIsChatInfoOpen(true)}
                   disabled={!activeChatData}
-                  className="w-full h-full flex items-center gap-3 px-6 text-left transition-colors hover:bg-slate-100/80 dark:hover:bg-slate-800/40 disabled:opacity-60 disabled:cursor-not-allowed"
+                  className="flex-1 h-full flex items-center gap-3 px-6 text-left transition-colors hover:bg-slate-100/80 dark:hover:bg-slate-800/40 disabled:opacity-60 disabled:cursor-not-allowed"
                 >
-                  {/* Аватарка-заглушка (скоро оживим) */}
-                  <div
-                    className="w-10 h-10 rounded-full text-white flex items-center justify-center font-bold border border-white/40 dark:border-sky-500/30"
-                    style={{ backgroundColor: activeChatData?.avatar_color || '#8ECAE6' }}
-                  >
-                    {activeChatData?.title?.[0].toUpperCase() || '?'}
-                  </div>
+                  <AvatarFallback
+                    label={activeChatData?.title ?? 'Чат'}
+                    backgroundColor={activeChatData?.avatar_color}
+                    className="w-10 h-10 border border-white/40 dark:border-sky-500/30"
+                  />
                   <div className="text-left">
-                    <div className="text-sm text-slate-800 dark:text-slate-100 font-semibold">{activeChatData?.title || 'Чат'}</div>
+                    <div className="text-sm text-slate-800 dark:text-slate-100 font-semibold">
+                      <EmojiText text={activeChatData?.title || 'Чат'} />
+                    </div>
                     <div className="text-[10px] text-emerald-500">в сети</div>
                   </div>
                 </button>
@@ -115,15 +135,16 @@ function App() {
             showCloseButton
           >
             <div className="flex flex-col items-center text-center gap-4 pt-1">
-              <div
-                className="w-20 h-20 rounded-full text-white flex items-center justify-center text-3xl font-bold border border-slate-200 dark:border-sky-500/30"
-                style={{ backgroundColor: chatPartner?.avatar_color || activeChatData?.avatar_color || '#8ECAE6' }}
-              >
-                {(chatPartner?.username || activeChatData?.title || '?')[0].toUpperCase()}
-              </div>
+              <AvatarFallback
+                label={chatPartner?.username || activeChatData?.title || '?'}
+                backgroundColor={
+                  chatPartner?.avatar_color ?? activeChatData?.avatar_color
+                }
+                className="w-20 h-20 text-3xl border border-slate-200 dark:border-sky-500/30"
+              />
 
               <div className="text-base font-semibold text-slate-900 dark:text-slate-100">
-                {chatPartner?.username || activeChatData?.title || 'Неизвестный'}
+                <EmojiText text={chatPartner?.username || activeChatData?.title || 'Неизвестный'} />
               </div>
 
               <button

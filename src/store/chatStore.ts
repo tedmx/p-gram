@@ -1,13 +1,5 @@
 import { create } from 'zustand'
-import type { Profile } from '../types'
-
-interface ChatData {
-  title: string
-  type: 'direct' | 'group' | 'channel'
-  avatar_url?: string | null
-  avatar_color?: string | null
-  participants?: Profile[]
-}
+import type { UiChatActive } from '../types'
 
 interface EditingMessage {
   id: string
@@ -16,8 +8,8 @@ interface EditingMessage {
 
 interface ChatState {
   activeChatId: string | null
-  activeChatData: ChatData | null
-  setActiveChat: (chatId: string | null, data?: ChatData | null) => void
+  activeChatData: UiChatActive | null
+  setActiveChat: (chatId: string | null, data?: UiChatActive | null) => void
   editingMessage: EditingMessage | null
   setEditingMessage: (msg: EditingMessage | null) => void
 }

@@ -16,6 +16,8 @@ export interface Message {
   created_at: string
 }
 
+export type ChatType = 'direct' | 'group' | 'channel'
+
 export interface Chat {
   id: string
   type: 'direct' | 'group'
@@ -23,20 +25,25 @@ export interface Chat {
   participants: Profile[]
 }
 
-// Тип для отображения в списке чатов (уже нормализованный)
-export interface ChatPreview {
+/**
+ * Нормализованный чат для UI (список в сайдбаре и т.п.).
+ * Совпадает с тем, что отдаёт клиентский слой после маппинга ответа API.
+ */
+export interface UiChat {
   chat_id: string
   title: string
-  type: 'direct' | 'group' | 'channel'
+  type: ChatType
   avatar_url: string | null
-  avatar_color?: string | null
+  avatar_color: string | null
+  /** Есть при загрузке с сервера; может отсутствовать сразу после создания direct из поиска. */
   participants?: Profile[]
-  lastMessage: {
-    content: string
-    createdAt: string
-    senderId: string
-  } | null
+  lastMessage: Message | null
 }
+
+/**
+ * Данные открытого чата для шапки и модалок. Идентификатор хранится отдельно (activeChatId).
+ */
+export type UiChatActive = Omit<UiChat, 'chat_id' | 'lastMessage'>
 
 export type CustomElement = { type: 'paragraph'; children: CustomText[] }
 export type CustomText = { text: string }

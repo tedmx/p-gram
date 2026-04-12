@@ -1,4 +1,9 @@
 import { supabase } from './supabase'
+import type { UiChat } from '../types'
+import {
+  mapMyChatsRowsToUiChats,
+  type SupabaseMyChatsRow,
+} from '../mappers/chatMappers'
 
 export const getOrCreateChat = async (currentUserId: string, targetUserId: string) => {
   // 1. Ищем существующий приватный чат
@@ -35,30 +40,8 @@ export const getOrCreateChat = async (currentUserId: string, targetUserId: strin
 
   return newChat.id
 }
-// Описываем структуру, которую вернет .select()
-export interface SupabaseChatResponse {
-  chat_id: string
-  chats: {
-    id: string
-    type: 'direct' | 'group' | 'channel'
-    participants: {
-      user_id: string
-      profiles: {
-        id: string
-        username: string
-        avatar_url: string | null
-        avatar_color: string | null
-      }
-    }[]
-    messages: {
-      content: string
-      created_at: string
-      sender_id: string
-    }[]
-  } | null
-}
 
-export const getMyChats = async (userId: string) => {
+export const getMyChats = async (userId: string): Promise<UiChat[]> => {
   const { data, error } = await supabase
     .from('participants')
     .select(`
@@ -71,6 +54,7 @@ export const getMyChats = async (userId: string) => {
           profiles (id, username, avatar_url, avatar_color)
         ),
         messages (
+          id,
           content,
           created_at,
           sender_id
@@ -82,23 +66,7 @@ export const getMyChats = async (userId: string) => {
     .limit(1, { foreignTable: 'chats.messages' })
 
   if (error) throw error
-  return (data as any[]).map(item => {
-    const chat = item.chats
-    const partner = chat.participants.find((p: any) => p.user_id !== userId)?.profiles
-    const lastMsg = chat.messages?.[0]
+  if (!data?.length) return []
 
-    return {
-      chat_id: item.chat_id,
-      title: partner?.username || 'Неизвестный',
-      type: chat.type,
-      avatar_url: partner?.avatar_url || null,
-      avatar_color: partner?.avatar_color || null,
-      participants: chat.participants?.map((p: any) => p.profiles).filter(Boolean) || [],
-      lastMessage: lastMsg ? {
-        content: lastMsg.content,
-        createdAt: lastMsg.created_at,
-        senderId: lastMsg.sender_id
-      } : null
-    }
-  })
+  return mapMyChatsRowsToUiChats(data as SupabaseMyChatsRow[], userId)
 }

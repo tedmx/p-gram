@@ -5,6 +5,7 @@ import { useChatStore } from '../../store/chatStore'
 import { MessageContextMenu } from './MessageContextMenu'
 import { getMessages, deleteMessage } from '../../api/messages'
 import { Modal } from '../ui/Modal'
+import { EmojiText } from '../ui/EmojiText'
 
 interface MessageListProps {
   chatId: string
@@ -87,7 +88,7 @@ export const MessageList = ({ chatId }: MessageListProps) => {
                     : ''
                 }
               `}>
-                <span>{msg.content}</span>
+                <EmojiText text={msg.content} />
                 <div className={`
                   float-right mt-2 ml-2 flex items-center gap-1
                   ${isMine

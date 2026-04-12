@@ -1,18 +1,77 @@
-import { useState, type ReactNode } from 'react'
+import { useState, useRef, useCallback, type ReactNode, useEffect } from 'react'
 
 interface MainLayoutProps {
   children: ReactNode
   sidebar: ReactNode
+  isChatOpen?: boolean
 }
 
-export const MainLayout = ({ children, sidebar }: MainLayoutProps) => {
+export const MainLayout = ({ children, sidebar, isChatOpen = false }: MainLayoutProps) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const [sidebarWidth, setSidebarWidth] = useState(499)
+  const [isResizing, setIsResizing] = useState(false)
+  const containerRef = useRef<HTMLDivElement>(null)
+  const startXRef = useRef(0)
+  const startWidthRef = useRef(499)
+
+  const handleMouseDown = useCallback((e: React.MouseEvent) => {
+    e.preventDefault()
+    setIsResizing(true)
+    startXRef.current = e.clientX
+    startWidthRef.current = sidebarWidth
+  }, [sidebarWidth])
+
+  const handleMouseMove = useCallback((e: MouseEvent) => {
+    if (!isResizing) return
+    
+    const diff = e.clientX - startXRef.current
+    const newWidth = startWidthRef.current + diff
+    
+    const minWidth = 256
+    const maxWidth = Math.floor(window.innerWidth * 0.4)
+    
+    if (newWidth >= minWidth && newWidth <= maxWidth) {
+      setSidebarWidth(newWidth)
+      if (containerRef.current) {
+        containerRef.current.style.setProperty('--dynamic-sidebar-width', `${newWidth}px`)
+      }
+    }
+  }, [isResizing])
+
+  const handleMouseUp = useCallback(() => {
+    setIsResizing(false)
+  }, [])
+
+  useEffect(() => {
+    if (containerRef.current) {
+      containerRef.current.style.setProperty('--dynamic-sidebar-width', `${sidebarWidth}px`)
+    }
+  }, [sidebarWidth])
+
+  useEffect(() => {
+    if (isResizing) {
+      document.addEventListener('mousemove', handleMouseMove)
+      document.addEventListener('mouseup', handleMouseUp)
+      document.body.style.cursor = 'ew-resize'
+      document.body.style.userSelect = 'none'
+    }
+    
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove)
+      document.removeEventListener('mouseup', handleMouseUp)
+      document.body.style.cursor = ''
+      document.body.style.userSelect = ''
+    }
+  }, [isResizing, handleMouseMove, handleMouseUp])
 
   return (
-    <div className="flex h-screen w-full bg-white dark:bg-slate-950 overflow-hidden text-slate-100">
+    <div 
+      ref={containerRef}
+      className={`telegram-layout-container ${isResizing ? 'is-resizing' : ''} ${isChatOpen ? 'chat-open' : ''}`}
+    >
       {/* Левая панель: Список чатов */}
-      <aside className="w-80 md:w-96 border-r dark:border-slate-800 flex flex-col bg-white  dark:bg-slate-900/50">
-        <header className="p-4 border-b dark:border-slate-800 flex items-center gap-3 relative">
+      <aside className="telegram-left-column bg-white dark:bg-slate-900/50 border-r dark:border-slate-800 flex flex-col overflow-hidden border-gray-200">
+        <header className="p-4 flex items-center gap-3 relative shrink-0">
           <button
             type="button"
             onClick={() => setIsMenuOpen((prev) => !prev)}
@@ -55,8 +114,13 @@ export const MainLayout = ({ children, sidebar }: MainLayoutProps) => {
         </div>
       </aside>
 
-      {/* Правая часть: Окно чата */}
-      <main className="flex-1 flex flex-col relative bg-slate-950">
+      {/* Правая часть: Окно чата - с resizer внутри */}
+      <main className="telegram-main-column flex flex-col relative bg-slate-950 overflow-hidden">
+        {/* Resize handle - positioned at LEFT edge of chat window, inside main */}
+        <div 
+          className="telegram-resize-handle"
+          onMouseDown={handleMouseDown}
+        />
         {children}
       </main>
     </div>
