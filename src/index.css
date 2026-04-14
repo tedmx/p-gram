@@ -1,7 +1,5 @@
 @import "tailwindcss";
 
-/* Tailwind v4 uses prefers-color-scheme by default for dark mode */
-
 .telegram-bg-container {
   position: relative;
   overflow: hidden;
@@ -42,9 +40,7 @@
 
 /* Left column (sidebar) */
 .telegram-left-column {
-  width: var(--dynamic-sidebar-width);
-  min-width: var(--left-column-min-width);
-  max-width: var(--left-column-max-width);
+  /* Width is controlled by grid-template-columns, not explicit width property */
   height: 100%;
   flex-shrink: 0;
 }
@@ -108,13 +104,7 @@
   .telegram-layout-container {
     grid-template-columns: 424px 1fr;
   }
-  
-  .telegram-left-column {
-    width: 424px !important;
-    min-width: 424px !important;
-    max-width: 424px !important;
-  }
-  
+
   .telegram-resize-handle {
     display: none;
   }
@@ -126,11 +116,7 @@
     grid-template-columns: 1fr;
   }
 
-  .telegram-left-column {
-    width: 100% !important;
-    min-width: 100% !important;
-    max-width: 100% !important;
-  }
+  /* Let grid control sizing - no explicit width needed on element */
 
   /* On mobile, sidebar shows by default when no chat is open */
   .telegram-left-column {

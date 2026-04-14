@@ -32,14 +32,18 @@ function App() {
       if (event.key !== 'Escape') return
       if (!activeChatId) return
 
-      setActiveChat(null)
-      setIsChatInfoOpen(false)
-      navigate('/')
+      // First close the info modal, only then close the chat on second Escape
+      if (isChatInfoOpen) {
+        setIsChatInfoOpen(false)
+      } else {
+        setActiveChat(null)
+        navigate('/')
+      }
     }
 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [activeChatId, navigate, setActiveChat])
+  }, [activeChatId, isChatInfoOpen, navigate, setActiveChat])
 
   useEffect(() => {
     if (location.pathname === '/' && activeChatId) {
