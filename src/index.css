@@ -31,16 +31,12 @@
   --left-column-min-width: 16rem;
   --left-column-max-width: 40vw;
   
-  display: grid;
-  grid-template-columns: var(--dynamic-sidebar-width) 1fr;
-  grid-template-rows: 100%;
   height: 100vh;
   width: 100%;
 }
 
 /* Left column (sidebar) */
 .telegram-left-column {
-  /* Width is controlled by grid-template-columns, not explicit width property */
   height: 100%;
   flex-shrink: 0;
 }
@@ -49,6 +45,7 @@
 .telegram-main-column {
   position: relative;
   min-width: 0; /* Prevent overflow */
+  height: 100%;
 }
 
 /* Resize handle - positioned at LEFT edge of chat window, inside main column */
@@ -62,6 +59,7 @@
   width: 0.25rem;
   background: transparent;
   transition: background-color 0.2s;
+  display: none; /* Hidden by default */
 }
 
 .telegram-resize-handle:hover {
@@ -75,8 +73,13 @@
 /* ========== BREAKPOINTS ========== */
 
 /* ≥1276px: Full Telegram Desktop - resizable sidebar, resizer visible */
-/* Base styles already handle this case */
 @media (min-width: 1276px) {
+  .telegram-layout-container {
+    display: grid;
+    grid-template-columns: var(--dynamic-sidebar-width) 1fr;
+    grid-template-rows: 100%;
+  }
+  
   .telegram-resize-handle {
     display: block;
   }
@@ -85,17 +88,9 @@
 /* 926px - 1275px: Adaptive growing sidebar */
 @media (min-width: 926px) and (max-width: 1275px) {
   .telegram-layout-container {
+    display: grid;
     grid-template-columns: minmax(16rem, 40vw) 1fr;
-  }
-  
-  .telegram-left-column {
-    width: auto;
-    min-width: var(--left-column-min-width);
-    max-width: var(--left-column-max-width);
-  }
-  
-  .telegram-resize-handle {
-    display: none;
+    grid-template-rows: 100%;
   }
 }
 
@@ -105,25 +100,20 @@
    - State 3: Chat open, sidebar visible → Sidebar (424px) + Chat (100% width, clipped) */
 @media (min-width: 601px) and (max-width: 925px) {
   .telegram-layout-container {
-    display: flex !important; /* Force flex for sliding logic */
-    grid-template-columns: none !important;
+    display: flex;
     width: 100%;
     overflow: hidden;
   }
 
   .telegram-left-column {
-    width: 424px !important;
-    min-width: 424px !important;
-    max-width: 424px !important;
-    flex-shrink: 0;
+    width: 424px;
     transition: margin-left 0.25s ease-out;
   }
 
   .telegram-main-column {
-    width: 100vw !important;
-    min-width: 100vw !important;
-    flex-shrink: 0;
-    display: flex !important;
+    width: 100vw;
+    min-width: 100vw;
+    display: flex;
   }
 
   /* State 2: Chat open, sidebar hidden (default when opening chat) */
@@ -140,26 +130,23 @@
   .telegram-layout-container:not(.chat-open) .telegram-left-column {
     margin-left: 0;
   }
-
-  .telegram-resize-handle {
-    display: none !important;
-  }
 }
 
 /* ≤600px: Mobile-like mode - sidebar OR chat takes full screen */
 @media (max-width: 600px) {
   .telegram-layout-container {
-    grid-template-columns: 1fr;
+    display: flex;
+    width: 100%;
+    overflow: hidden;
   }
 
-  /* Let grid control sizing - no explicit width needed on element */
-
-  /* On mobile, sidebar shows by default when no chat is open */
   .telegram-left-column {
+    width: 100%;
     display: flex;
   }
 
   .telegram-main-column {
+    width: 100%;
     display: none;
   }
 
@@ -170,9 +157,5 @@
 
   .telegram-layout-container.chat-open .telegram-main-column {
     display: flex;
-  }
-
-  .telegram-resize-handle {
-    display: none;
   }
 }
