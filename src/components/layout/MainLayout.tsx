@@ -4,9 +4,15 @@ interface MainLayoutProps {
   children: ReactNode
   sidebar: ReactNode
   isChatOpen?: boolean
+  sidebarVisible?: boolean
 }
 
-export const MainLayout = ({ children, sidebar, isChatOpen = false }: MainLayoutProps) => {
+export const MainLayout = ({ 
+  children, 
+  sidebar, 
+  isChatOpen = false,
+  sidebarVisible = false
+}: MainLayoutProps) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [sidebarWidth, setSidebarWidth] = useState(499)
   const [isResizing, setIsResizing] = useState(false)
@@ -67,7 +73,7 @@ export const MainLayout = ({ children, sidebar, isChatOpen = false }: MainLayout
   return (
     <div 
       ref={containerRef}
-      className={`telegram-layout-container ${isResizing ? 'is-resizing' : ''} ${isChatOpen ? 'chat-open' : ''}`}
+      className={`telegram-layout-container ${isResizing ? 'is-resizing' : ''} ${isChatOpen ? 'chat-open' : ''} ${sidebarVisible ? 'sidebar-visible' : ''}`}
     >
       {/* Левая панель: Список чатов */}
       <aside className="telegram-left-column bg-white dark:bg-slate-900/50 border-r dark:border-slate-800 flex flex-col overflow-hidden border-gray-200">

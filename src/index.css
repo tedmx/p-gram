@@ -99,14 +99,50 @@
   }
 }
 
-/* 601px - 925px: Fixed sidebar width (424px) */
+/* 601px - 925px: Sliding layout with three states
+   - State 1: No chat open → Sidebar (424px) + Empty area (pattern)
+   - State 2: Chat open, sidebar hidden → Chat (100% width)
+   - State 3: Chat open, sidebar visible → Sidebar (424px) + Chat (100% width, clipped) */
 @media (min-width: 601px) and (max-width: 925px) {
   .telegram-layout-container {
-    grid-template-columns: 424px 1fr;
+    display: flex !important; /* Force flex for sliding logic */
+    grid-template-columns: none !important;
+    width: 100%;
+    overflow: hidden;
+  }
+
+  .telegram-left-column {
+    width: 424px !important;
+    min-width: 424px !important;
+    max-width: 424px !important;
+    flex-shrink: 0;
+    transition: margin-left 0.25s ease-out;
+  }
+
+  .telegram-main-column {
+    width: 100vw !important;
+    min-width: 100vw !important;
+    flex-shrink: 0;
+    display: flex !important;
+  }
+
+  /* State 2: Chat open, sidebar hidden (default when opening chat) */
+  .telegram-layout-container.chat-open:not(.sidebar-visible) .telegram-left-column {
+    margin-left: -424px;
+  }
+
+  /* State 3: Chat open, sidebar visible (after clicking back arrow) */
+  .telegram-layout-container.chat-open.sidebar-visible .telegram-left-column {
+    margin-left: 0;
+  }
+
+  /* State 1: No chat open - sidebar is visible, main is visible (shows pattern) */
+  .telegram-layout-container:not(.chat-open) .telegram-left-column {
+    margin-left: 0;
   }
 
   .telegram-resize-handle {
-    display: none;
+    display: none !important;
   }
 }
 

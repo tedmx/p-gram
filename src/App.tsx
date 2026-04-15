@@ -16,7 +16,7 @@ function App() {
   useAuth() // Запускаем отслеживание сессии
   
   const { user, isLoading } = useAuthStore()
-  const { activeChatId, activeChatData, setActiveChat } = useChatStore()
+  const { activeChatId, activeChatData, setActiveChat, sidebarVisible, setSidebarVisible } = useChatStore()
   const [isChatInfoOpen, setIsChatInfoOpen] = useState(false)
   const navigate = useNavigate()
   const location = useLocation()
@@ -71,24 +71,48 @@ function App() {
         <MainLayout 
           sidebar={<Sidebar />}
           isChatOpen={!!activeChatId}
+          sidebarVisible={sidebarVisible}
         >
           {/* Правая часть: Окно чата (Контент) */}
           <div className="flex flex-col h-full">
             {activeChatId && (
               <header className="h-16 bg-white dark:bg-slate-900 w-full flex items-center">
-                {/* Back button - visible only on mobile */}
+                {/* Back/Close button - logic depends on viewport width and sidebar state */}
                 <button
                   type="button"
                   onClick={() => {
-                    setActiveChat(null)
-                    setIsChatInfoOpen(false)
-                    navigate('/')
+                    const isTablet = window.innerWidth >= 601 && window.innerWidth <= 925
+                    
+                    if (isTablet) {
+                      if (sidebarVisible) {
+                        // State 3 → State 1: Close chat completely
+                        setActiveChat(null)
+                        setIsChatInfoOpen(false)
+                        navigate('/')
+                      } else {
+                        // State 2 → State 3: Show sidebar
+                        setSidebarVisible(true)
+                      }
+                    } else {
+                      // Mobile (<=600px): Close chat completely
+                      setActiveChat(null)
+                      setIsChatInfoOpen(false)
+                      navigate('/')
+                    }
                   }}
-                  className="xl:hidden w-14 h-full flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                  className="lg:hidden w-14 h-full flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
                 >
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
-                  </svg>
+                  {sidebarVisible ? (
+                    // State 3: Close (X) icon
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  ) : (
+                    // State 2: Back arrow icon
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+                    </svg>
+                  )}
                 </button>
 
                 <button
