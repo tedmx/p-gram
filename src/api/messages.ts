@@ -11,16 +11,56 @@ export const getMessages = async (chatId: string) => {
   return data
 }
 
-export const sendMessage = async (chatId: string, senderId: string, content: string) => {
-  const { error } = await supabase
+export const uploadImage = async (file: File) => {
+  // Получаем расширение файла
+  const fileExt = file.name.split('.').pop()?.toLowerCase() || 'jpg'
+  
+  // Генерируем безопасное имя файла
+  const fileName = `${crypto.randomUUID()}.${fileExt}`
+  const filePath = fileName
+
+  console.log('📤 Загружаем файл:', filePath, 'Размер:', file.size, 'Тип:', file.type)
+
+  const { data, error } = await supabase.storage
+    .from('misc-uploads')
+    .upload(filePath, file)
+
+  if (error) {
+    console.error('❌ Ошибка загрузки:', error)
+    throw error
+  }
+
+  console.log('✅ Загрузка успешна:', data)
+
+  // Получаем публичную ссылку
+  const { data: { publicUrl } } = supabase.storage
+    .from('misc-uploads')
+    .getPublicUrl(filePath)
+
+  console.log('🔗 Публичный URL:', publicUrl)
+
+  return publicUrl
+}
+
+export const sendMessage = async (
+  chatId: string,
+  senderId: string,
+  content: string,
+  imageUrl?: string,
+) => {
+  const { data, error } = await supabase
     .from('messages')
-    .insert({
+    .insert([{
       chat_id: chatId,
       sender_id: senderId,
-      content
-    })
+      content,
+      image_url: imageUrl,
+    }])
+    .select()
+    .single()
 
   if (error) throw error
+  return data
 }
 
 export const updateMessage = async (messageId: string, content: string) => {
@@ -28,7 +68,7 @@ export const updateMessage = async (messageId: string, content: string) => {
     .from('messages')
     .update({ 
       content, 
-      is_edited: true, // Хорошая практика — помечать измененные сообщения
+      is_edited: true,
       updated_at: new Date().toISOString() 
     })
     .eq('id', messageId)

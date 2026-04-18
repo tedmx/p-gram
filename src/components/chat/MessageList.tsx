@@ -88,6 +88,14 @@ export const MessageList = ({ chatId }: MessageListProps) => {
                     : ''
                 }
               `}>
+                {msg.image_url && (
+                  <img 
+                    src={msg.image_url} 
+                    alt="Attachment" 
+                    className="rounded-lg mb-2 max-w-full h-auto cursor-pointer hover:opacity-90 transition-opacity"
+                    onClick={() => window.open(msg.image_url, '_blank')}
+                  />
+                )}
                 <EmojiText text={msg.content} />
                 <div className={`
                   float-right mt-2 ml-2 flex items-center gap-1

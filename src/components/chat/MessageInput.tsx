@@ -3,12 +3,14 @@ import { createEditor, type Descendant, Node, Transforms, Text, Range, Editor } 
 import { Slate, Editable, withReact, type RenderLeafProps, ReactEditor } from 'slate-react'
 import emojiRegex from 'emoji-regex'
 import Picker from '@emoji-mart/react'
+import { Paperclip } from 'lucide-react'
 
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { sendMessage, updateMessage } from '../../api/messages'
 import { useAuthStore } from '../../store/authStore'
 import { useChatStore } from '../../store/chatStore'
 import { EmojiText } from '../ui/EmojiText'
+import { ImageUploadModal } from './ImageUploadModal'
 
 // Вспомогательная функция для поиска эмодзи
 const searchEmojis = async (query: string) => {
@@ -63,6 +65,8 @@ const Leaf = ({ attributes, children, leaf }: RenderLeafProps) => {
 export const MessageInput = ({ chatId }: { chatId: string }) => {
   const currentUser = useAuthStore(state => state.user)
   const queryClient = useQueryClient()
+  
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   const editor = useMemo(() => withReact(createEditor()), [])
 
@@ -73,6 +77,9 @@ export const MessageInput = ({ chatId }: { chatId: string }) => {
   const [search, setSearch] = useState('')
   const [suggestions, setSuggestions] = useState<any[]>([])
   const hoverTimeoutRef = useRef<any>(null)
+
+  const [selectedFile, setSelectedFile] = useState<File | null>(null)
+  const [isModalOpen, setIsModalOpen] = useState(false)
 
   const { editingMessage, setEditingMessage } = useChatStore()
 
@@ -306,6 +313,18 @@ export const MessageInput = ({ chatId }: { chatId: string }) => {
     setSearch('') 
   }
 
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (file) {
+      setSelectedFile(file)
+      setIsModalOpen(true)
+    }
+    // Сбросить значение инпута, чтобы можно было выбрать тот же файл повторно
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ''
+    }
+  }
+
   return (
     <div className="mx-auto flex flex-col w-full max-w-[45.5rem] [@media(min-width:1921px)]:max-w-[50vw] bg-white dark:bg-slate-800 rounded-2xl relative">
       {target && suggestions.length > 0 && (
@@ -377,6 +396,17 @@ export const MessageInput = ({ chatId }: { chatId: string }) => {
             </svg>
           </button>
         </div>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          id="image-upload"
+          className="hidden"
+          onChange={handleFileChange}
+        />
+        <label htmlFor="image-upload" className="cursor-pointer text-slate-500 hover:text-sky-500 dark:text-slate-400 dark:hover:text-sky-400 transition-colors">
+          <Paperclip className="w-6 h-6" />
+        </label>
         <Slate
           editor={editor}
           initialValue={initialValue}
@@ -400,6 +430,23 @@ export const MessageInput = ({ chatId }: { chatId: string }) => {
           </svg>
         </button>
       </div>
+      <ImageUploadModal
+        file={selectedFile}
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onSend={async (imageUrl, caption) => {
+          try {
+            await sendMessage(chatId, currentUser!.id, caption, imageUrl);
+            queryClient.invalidateQueries({ queryKey: ['messages', chatId] });
+            queryClient.invalidateQueries({ queryKey: ['my-chats'] });
+          } catch (error) {
+            console.error('Ошибка при отправке сообщения:', error);
+          } finally {
+            setIsModalOpen(false);
+            setSelectedFile(null);
+          }
+        }}
+      />
     </div>
-  )
+  );
 }
