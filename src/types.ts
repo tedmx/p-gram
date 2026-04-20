@@ -14,6 +14,7 @@ export interface Message {
   sender_id: string
   content: string
   created_at: string
+  read: boolean
 }
 
 export type ChatType = 'direct' | 'group' | 'channel'

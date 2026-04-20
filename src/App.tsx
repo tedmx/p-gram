@@ -136,7 +136,7 @@ function App() {
               </header>
             )}
             
-            <div className="flex-1 flex flex-col relative telegram-bg-container w-full overflow-hidden bg-blue-200 dark:bg-slate-950">
+            <div className="flex-1 flex flex-col relative telegram-bg-container w-full overflow-hidden bg-chat-gradient">
               {activeChatId ? (
                 <>
                   {/* Контейнер для списка, чтобы он был поверх фона */}

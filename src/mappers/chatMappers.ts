@@ -77,6 +77,7 @@ export function mapMyChatsRowToUiChat(
           sender_id: lastRaw.sender_id,
           content: lastRaw.content,
           created_at: lastRaw.created_at,
+          read: lastRaw.read,
         }
       : null,
   }

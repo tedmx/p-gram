@@ -57,7 +57,8 @@ export const getMyChats = async (userId: string): Promise<UiChat[]> => {
           id,
           content,
           created_at,
-          sender_id
+          sender_id,
+          read
         )
       )
     `)

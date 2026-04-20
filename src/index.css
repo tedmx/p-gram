@@ -1,5 +1,26 @@
 @import "tailwindcss";
 
+@theme {
+  --background-image-chat-gradient: var(--chat-bg-var);
+}
+
+@layer base {
+  :root {
+    --chat-bg-var: linear-gradient(
+      135deg,
+      rgb(139 192 255) 0%,
+      rgb(196, 221, 255) 50%,
+      rgb(166, 206, 255) 100%
+    );
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --chat-bg-var: linear-gradient(135deg, #4d3553 0%, #162d55 50%, #353f69 100%);
+    }
+  }
+}
+
 .telegram-bg-container {
   position: relative;
   overflow: hidden;

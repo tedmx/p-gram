@@ -4,6 +4,7 @@ import { useChatStore } from '../../store/chatStore'
 import { type UiChat } from '../../types'
 import { AvatarFallback } from '../ui/AvatarFallback'
 import { EmojiText } from '../ui/EmojiText'
+import { SentIcon, ReadIcon } from './ReadStatus'
 
 interface ChatItemProps {
   chat: UiChat
@@ -53,10 +54,12 @@ export const ChatItem = ({ chat, isActive, currentUserId }: ChatItemProps) => {
             <EmojiText text={chat.title} />
           </span>
           <div className="flex items-center gap-1 shrink-0">
-            {isMyLastMessage && (
-              <svg className={`w-4 h-4 ${isActive ? 'text-sky-100' : 'text-sky-500'}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M7 13l3 3 7-7" /><path d="M12 13l3 3 7-7" />
-              </svg>
+            {isMyLastMessage && chat.lastMessage && (
+              chat.lastMessage.read ? (
+                <ReadIcon className={`w-5 h-5 ${isActive ? 'text-sky-100' : 'text-sky-500'}`} />
+              ) : (
+                <SentIcon className={`w-4 h-4 ${isActive ? 'text-sky-100' : 'text-sky-500'}`} />
+              )
             )}
             <span className={`text-[11px] ${isActive ? 'text-sky-100' : 'text-slate-500'}`}>
               {time}

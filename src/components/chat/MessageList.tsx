@@ -3,7 +3,8 @@ import { useAuthStore } from '../../store/authStore'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useChatStore } from '../../store/chatStore'
 import { MessageContextMenu } from './MessageContextMenu'
-import { getMessages, deleteMessage } from '../../api/messages'
+import { SentIcon, ReadIcon } from './ReadStatus'
+import { getMessages, deleteMessage, markAsRead } from '../../api/messages'
 import { Modal } from '../ui/Modal'
 import { EmojiText } from '../ui/EmojiText'
 
@@ -31,6 +32,44 @@ export const MessageList = ({ chatId }: MessageListProps) => {
     refetchInterval: 3000 // Временный "поллинг" каждые 3 сек, пока не включим Realtime
   })
 
+  const { mutate: markRead } = useMutation({
+    mutationFn: markAsRead,
+    onSuccess: (_, messageId) => {
+      // Обновляем сообщения в чате
+      queryClient.setQueryData(['messages', chatId], (prev: any) =>
+        prev?.map((msg: any) =>
+          msg.id === messageId ? { ...msg, read: true } : msg
+        )
+      )
+      // Обновляем lastMessage в списке чатов (сайдбар)
+      queryClient.setQueryData(['my-chats'], (old: any) => {
+        if (!old) return old
+        return old.pages ? {
+          ...old,
+          pages: old.pages.map((page: any) =>
+            page.map((chat: any) => {
+              if (chat.chat_id === chatId && chat.lastMessage?.id === messageId) {
+                return {
+                  ...chat,
+                  lastMessage: { ...chat.lastMessage, read: true }
+                }
+              }
+              return chat
+            })
+          )
+        } : old.map((chat: any) => {
+          if (chat.chat_id === chatId && chat.lastMessage?.id === messageId) {
+            return {
+              ...chat,
+              lastMessage: { ...chat.lastMessage, read: true }
+            }
+          }
+          return chat
+        })
+      })
+    }
+  })
+
   const { mutate: handleDelete } = useMutation({
     mutationFn: (id: string) => deleteMessage(id),
     onSuccess: () => {
@@ -39,6 +78,37 @@ export const MessageList = ({ chatId }: MessageListProps) => {
       queryClient.invalidateQueries({ queryKey: ['my-chats'] })
     }
   })
+
+
+  // IntersectionObserver для отметки прочтения
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            const messageId = entry.target.id.replace('msg-', '')
+            const message = messages?.find((msg) => msg.id === messageId)
+            
+            // Отмечаем как прочитанное, если:
+            // - это не моё сообщение
+            // - оно ещё не прочитано
+            if (message && message.sender_id !== currentUser?.id && !message.read) {
+              markRead(messageId)
+            }
+          }
+        })
+      },
+      { threshold: 0.5 } // 50% видимости
+    )
+
+    // Наблюдаем за каждым сообщением
+    messages?.forEach((msg) => {
+      const element = document.getElementById(`msg-${msg.id}`)
+      if (element) observer.observe(element)
+    })
+
+    return () => observer.disconnect()
+  }, [messages, currentUser, markRead])
 
   const scrollRef = useRef<HTMLDivElement>(null)
 
@@ -74,6 +144,7 @@ export const MessageList = ({ chatId }: MessageListProps) => {
           return (
             <div 
               key={msg.id} 
+              id={`msg-${msg.id}`}
               className={`flex w-full ${isMine ? 'justify-end' : 'justify-start'}`}
               onContextMenu={(e) => handleContextMenu(e, msg)}
             >
@@ -114,6 +185,16 @@ export const MessageList = ({ chatId }: MessageListProps) => {
                   <span className="text-[10px]">
                     {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                   </span>
+                  {isMine && (
+                    <>
+                      {msg.read ? (
+                        <ReadIcon className="ml-1 text-sky-500 dark:text-white w-5 h-5" />
+                      ) : (
+                        <SentIcon className="ml-1 text-sky-500 dark:text-white w-4 h-4" />
+                      )}
+                    </>
+                  )}
+                
                 </div>
                 <div className="clear-both" />
               </div>
@@ -123,7 +204,7 @@ export const MessageList = ({ chatId }: MessageListProps) => {
         {menuPosition && (
           <MessageContextMenu 
             position={{ x: menuPosition.x, y: menuPosition.y }}
-            onClose={() => setMenuPosition(null)}
+            onClose={() => setMenuPosition(null)} 
             onEdit={() => setEditingMessage({ id: menuPosition.msg.id, content: menuPosition.msg.content })}
             onDelete={() => {
               setMessageToDelete(menuPosition.msg.id)

@@ -11,7 +11,7 @@ export default {
           blue: '#0088cc',
           light: '#6abfef'
         }
-      }
+      },
     },
   },
   plugins: [],

@@ -8,7 +8,10 @@ export const getMessages = async (chatId: string) => {
     .order('created_at', { ascending: true })
 
   if (error) throw error
-  return data
+  return data.map(msg => ({
+    ...msg,
+    read: msg.read || false
+  }))
 }
 
 export const uploadImage = async (file: File) => {
@@ -55,6 +58,7 @@ export const sendMessage = async (
       sender_id: senderId,
       content,
       image_url: imageUrl,
+      read: false
     }])
     .select()
     .single()
@@ -84,6 +88,15 @@ export const deleteMessage = async (id: string) => {
     .from('messages')
     .delete()
     .eq('id', id)
+
+  if (error) throw error
+}
+
+export const markAsRead = async (messageId: string) => {
+  const { error } = await supabase
+    .from('messages')
+    .update({ read: true })
+    .eq('id', messageId)
 
   if (error) throw error
 }
