@@ -8,6 +8,8 @@ import { getMessages, deleteMessage, markAsRead } from '../../api/messages'
 import { Modal } from '../ui/Modal'
 import { EmojiText } from '../ui/EmojiText'
 
+import type { Message, Profile } from '../../types'
+
 interface MessageListProps {
   chatId: string
 }
@@ -17,11 +19,15 @@ export const MessageList = ({ chatId }: MessageListProps) => {
   const queryClient = useQueryClient()
 
   const { editingMessage, setEditingMessage } = useChatStore()
-  const [menuPosition, setMenuPosition] = useState<{ x: number, y: number, msg: any } | null>(null)
-  const [messageToDelete, setMessageToDelete] = useState<any | null>(null)
+  const [menuPosition, setMenuPosition] = useState<{
+    x: number,
+    y: number,
+    msg: Message,
+  } | null>(null)
+  const [messageToDelete, setMessageToDelete] = useState<string | null>(null)
   const [deleteForEveryone, setDeleteForEveryone] = useState(false)
 
-  const handleContextMenu = (e: React.MouseEvent, msg: any) => {
+  const handleContextMenu = (e: React.MouseEvent, msg: Message) => {
     e.preventDefault()
     setMenuPosition({ x: e.clientX, y: e.clientY, msg })
   }
@@ -36,37 +42,11 @@ export const MessageList = ({ chatId }: MessageListProps) => {
     mutationFn: markAsRead,
     onSuccess: (_, messageId) => {
       // Обновляем сообщения в чате
-      queryClient.setQueryData(['messages', chatId], (prev: any) =>
-        prev?.map((msg: any) =>
+      queryClient.setQueryData(['messages', chatId], (prev: Message[]) =>
+        prev?.map((msg: Message) =>
           msg.id === messageId ? { ...msg, read: true } : msg
         )
       )
-      // Обновляем lastMessage в списке чатов (сайдбар)
-      queryClient.setQueryData(['my-chats'], (old: any) => {
-        if (!old) return old
-        return old.pages ? {
-          ...old,
-          pages: old.pages.map((page: any) =>
-            page.map((chat: any) => {
-              if (chat.chat_id === chatId && chat.lastMessage?.id === messageId) {
-                return {
-                  ...chat,
-                  lastMessage: { ...chat.lastMessage, read: true }
-                }
-              }
-              return chat
-            })
-          )
-        } : old.map((chat: any) => {
-          if (chat.chat_id === chatId && chat.lastMessage?.id === messageId) {
-            return {
-              ...chat,
-              lastMessage: { ...chat.lastMessage, read: true }
-            }
-          }
-          return chat
-        })
-      })
     }
   })
 
@@ -125,7 +105,7 @@ export const MessageList = ({ chatId }: MessageListProps) => {
     
     // Ищем участника, который не является текущим пользователем
     const partner = activeChatData.participants?.find(
-      (p: any) => p.id !== currentUser.id
+      (p: Profile) => p.id !== currentUser.id
     )
     
     return partner?.username || 'собеседника'
@@ -138,7 +118,7 @@ export const MessageList = ({ chatId }: MessageListProps) => {
       ref={scrollRef} 
       className="flex-1 overflow-y-auto p-4 space-y-3 flex flex-col scrollbar-thin scrollbar-thumb-slate-800 scroll-smooth w-full"
     >
-      <div className="mx-auto w-full max-w-[45.5rem] [@media(min-width:1921px)]:max-w-[50vw] space-y-4">
+      <div className="mx-auto w-full max-w-182 [@media(min-width:1921px)]:max-w-[50vw] space-y-4">
         {messages?.map((msg) => {
           const isMine = msg.sender_id === currentUser?.id
           return (

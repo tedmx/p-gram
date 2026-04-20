@@ -1,4 +1,4 @@
-import type { BaseEditor } from 'slate'
+import type { BaseEditor, DecoratedRange } from 'slate'
 import { ReactEditor } from 'slate-react'
 
 export interface Profile {
@@ -47,12 +47,29 @@ export interface UiChat {
 export type UiChatActive = Omit<UiChat, 'chat_id' | 'lastMessage'>
 
 export type CustomElement = { type: 'paragraph'; children: CustomText[] }
-export type CustomText = { text: string }
+
+export type CustomText = {
+  text: string;
+  emoji?: boolean;
+  emojiChar?: string;
+}
+
+export type CustomDecoratedRange = DecoratedRange & {
+  emoji?: boolean;
+  emojiChar?: string;
+}
 
 declare module 'slate' {
   interface CustomTypes {
     Editor: BaseEditor & ReactEditor
     Element: CustomElement
     Text: CustomText
+    DecoratedRange: CustomDecoratedRange
   }
+}
+
+export interface SingleEmojiData {
+  id: string;
+  native: string;
+  name: string;
 }

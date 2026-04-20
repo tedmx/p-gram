@@ -23,6 +23,7 @@ export interface SupabaseMyChatsNested {
     content: string
     created_at: string
     sender_id: string
+    read: boolean
   }[]
 }
 

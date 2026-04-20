@@ -100,7 +100,7 @@ export const MainLayout = ({
                 onClick={() => setIsMenuOpen(false)}
                 className="fixed inset-0 z-10"
               />
-              <div className="absolute left-4 top-14 z-20 min-w-[220px] rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-xl p-1.5">
+              <div className="absolute left-4 top-14 z-20 min-w-55 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-xl p-1.5">
                 <button
                   type="button"
                   onClick={() => {

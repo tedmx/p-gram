@@ -1,5 +1,5 @@
 import { useCallback, useState, useMemo, useEffect, useRef } from 'react'
-import { createEditor, type Descendant, Node, Transforms, Text, Range, Editor } from 'slate'
+import { createEditor, type Descendant, Node, Transforms, Text, Range, Editor, type NodeEntry } from 'slate'
 import { Slate, Editable, withReact, type RenderLeafProps, ReactEditor } from 'slate-react'
 import emojiRegex from 'emoji-regex'
 import Picker from '@emoji-mart/react'
@@ -11,9 +11,10 @@ import { useAuthStore } from '../../store/authStore'
 import { useChatStore } from '../../store/chatStore'
 import { EmojiText } from '../ui/EmojiText'
 import { ImageUploadModal } from './ImageUploadModal'
+import type { CustomDecoratedRange, SingleEmojiData } from '../../types'
 
 // Вспомогательная функция для поиска эмодзи
-const searchEmojis = async (query: string) => {
+const searchEmojis = async (query: string) : Promise<Array<SingleEmojiData>> => {
   const response = await fetch('https://cdn.jsdelivr.net/npm/@emoji-mart/data')
   const emojiData = await response.json()
   const emojis = emojiData.emojis
@@ -47,10 +48,10 @@ const initialValue: Descendant[] = [
 ]
 
 const Leaf = ({ attributes, children, leaf }: RenderLeafProps) => {
-  if ((leaf as any).emoji) {
+  if (leaf.emoji) {
     return (
       <span {...attributes} className="relative inline-block">
-        <EmojiText text={(leaf as any).emojiChar} />
+        <EmojiText text={leaf.emojiChar} />
         {/* Делаем оригинальный текст невидимым, но доступным для Slate */}
         <span className="absolute inset-0 opacity-0 pointer-events-none select-all overflow-hidden whitespace-nowrap">
           {children}
@@ -75,8 +76,8 @@ export const MessageInput = ({ chatId }: { chatId: string }) => {
   const [target, setTarget] = useState<Range | null>(null)
   const [index, setIndex] = useState(0)
   const [search, setSearch] = useState('')
-  const [suggestions, setSuggestions] = useState<any[]>([])
-  const hoverTimeoutRef = useRef<any>(null)
+  const [suggestions, setSuggestions] = useState<SingleEmojiData[]>([])
+  const hoverTimeoutRef = useRef<number>(null)
 
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -97,7 +98,7 @@ export const MessageInput = ({ chatId }: { chatId: string }) => {
     }
   }, [search])
 
-  const handleEmojiSelect = (emoji: any) => {
+  const handleEmojiSelect = (emoji: SingleEmojiData) => {
     if (target) {
       Transforms.select(editor, target)
       Transforms.insertText(editor, emoji.native)
@@ -133,8 +134,8 @@ export const MessageInput = ({ chatId }: { chatId: string }) => {
   }
 
   const decorate = useCallback(
-    ([node, path]: any) => {
-      const ranges: any[] = []
+    ([node, path]: NodeEntry) => {
+      const ranges: CustomDecoratedRange[] = []
 
       if (Text.isText(node)) {
         const { text } = node
@@ -180,7 +181,6 @@ export const MessageInput = ({ chatId }: { chatId: string }) => {
   useEffect(() => {
     if (editingMessage && lastSyncedId.current !== editingMessage.id) {
       lastSyncedId.current = editingMessage.id
-      // eslint-disable-next-line react-hooks/immutability
       editor.children = [{
         type: 'paragraph',
         children: [{ text: editingMessage.content }]
@@ -326,7 +326,7 @@ export const MessageInput = ({ chatId }: { chatId: string }) => {
   }
 
   return (
-    <div className="mx-auto flex flex-col w-full max-w-[45.5rem] [@media(min-width:1921px)]:max-w-[50vw] bg-white dark:bg-slate-800 rounded-2xl relative">
+    <div className="mx-auto flex flex-col w-full max-w-182 [@media(min-width:1921px)]:max-w-[50vw] bg-white dark:bg-slate-800 rounded-2xl relative">
       {target && suggestions.length > 0 && (
         <div
           className="absolute bottom-full left-0 mb-2 z-50 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl shadow-2xl p-2 flex items-center gap-2 overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-200 h-14"
@@ -443,17 +443,17 @@ export const MessageInput = ({ chatId }: { chatId: string }) => {
         onClose={() => setIsModalOpen(false)}
         onSend={async (imageUrl, caption) => {
           try {
-            await sendMessage(chatId, currentUser!.id, caption, imageUrl);
-            queryClient.invalidateQueries({ queryKey: ['messages', chatId] });
-            queryClient.invalidateQueries({ queryKey: ['my-chats'] });
+            await sendMessage(chatId, currentUser!.id, caption, imageUrl)
+            queryClient.invalidateQueries({ queryKey: ['messages', chatId] })
+            queryClient.invalidateQueries({ queryKey: ['my-chats'] })
           } catch (error) {
-            console.error('Ошибка при отправке сообщения:', error);
+            console.error('Ошибка при отправке сообщения:', error)
           } finally {
-            setIsModalOpen(false);
-            setSelectedFile(null);
+            setIsModalOpen(false)
+            setSelectedFile(null)
           }
         }}
       />
     </div>
-  );
+  )
 }
