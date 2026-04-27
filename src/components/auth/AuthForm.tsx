@@ -17,8 +17,17 @@ export const AuthForm = () => {
 
     try {
       if (isSignUp) {
-        const { error } = await supabase.auth.signUp({ email, password })
+        const { data, error } = await supabase.auth.signUp({ email, password })
         if (error) throw error
+        if (data.user) {
+          const { error: profileError } = await supabase
+            .from('profiles')
+            .insert({
+              id: data.user.id,
+              username: email.split('@')[0],
+            })
+          if (profileError) console.error('Profile creation error:', profileError)
+        }
         setShowSuccessModal(true)
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password })

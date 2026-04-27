@@ -7,19 +7,27 @@ import { MessageList } from './components/chat/MessageList'
 import { MessageInput } from './components/chat/MessageInput'
 import { useChatStore } from './store/chatStore'
 import { useEffect, useMemo, useState } from 'react'
-import { AvatarFallback } from './components/ui/AvatarFallback'
 import { EmojiText } from './components/ui/EmojiText'
-import { Modal } from './components/ui/Modal'
 import { useLocation, useNavigate } from 'react-router-dom'
+import { UserProfileModal } from './components/ui/UserProfileModal'
+import { useProfile } from './hooks/useProfile'
+import { Avatar } from './components/ui/Avatar'
 
 function App() {
   useAuth() // Запускаем отслеживание сессии
   
   const { user, isLoading } = useAuthStore()
+  const { data: currentProfile, isLoading: profileLoading } = useProfile()
+
   const { activeChatId, activeChatData, setActiveChat, sidebarVisible, setSidebarVisible } = useChatStore()
   const [isChatInfoOpen, setIsChatInfoOpen] = useState(false)
   const navigate = useNavigate()
   const location = useLocation()
+
+  const modalMode = useChatStore(state => state.modalMode)
+  const closeModal = useChatStore(state => state.closeModal)
+
+  const openModal = useChatStore(state => state.openModal)
 
   const chatPartner = useMemo(() => {
     if (!activeChatData || !user) return null
@@ -54,7 +62,7 @@ function App() {
     }
   }, [activeChatId, location.pathname, setActiveChat])
 
-  if (isLoading) {
+  if (isLoading || profileLoading ) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-950 text-slate-800 dark:text-white">
         <div className="flex flex-col items-center gap-4">
@@ -76,7 +84,12 @@ function App() {
           {/* Правая часть: Окно чата (Контент) */}
           <div className="flex flex-col h-full">
             {activeChatId && (
-              <header className="h-16 bg-white dark:bg-slate-900 w-full flex items-center">
+              <header
+                className="h-16 bg-white dark:bg-slate-900 w-full flex items-center"
+                onClick={() => {
+                  openModal('chat-info')
+                }}
+              >
                 {/* Back/Close button - logic depends on viewport width and sidebar state */}
                 <button
                   type="button"
@@ -117,14 +130,17 @@ function App() {
 
                 <button
                   type="button"
-                  onClick={() => activeChatData && setIsChatInfoOpen(true)}
+                  onClick={() => {
+                    openModal('chat-info')
+                  }}
                   disabled={!activeChatData}
                   className="flex-1 h-full flex items-center gap-3 px-6 text-left transition-colors hover:bg-slate-100/80 dark:hover:bg-slate-800/40 disabled:opacity-60 disabled:cursor-not-allowed"
                 >
-                  <AvatarFallback
-                    label={activeChatData?.title ?? 'Чат'}
+                  <Avatar
+                    src={activeChatData?.avatar_url} 
+                    name={activeChatData?.title || '?'} 
                     backgroundColor={activeChatData?.avatar_color}
-                    className="w-10 h-10 border border-white/40 dark:border-sky-500/30"
+                    className="w-10 h-10 border border-white/40 dark:border-sky-500/30" 
                   />
                   <div className="text-left">
                     <div className="text-sm text-slate-800 dark:text-slate-100 font-semibold">
@@ -155,46 +171,21 @@ function App() {
               )}
             </div>
           </div>
-          <Modal
-            isOpen={isChatInfoOpen}
-            onClose={() => setIsChatInfoOpen(false)}
-            title={activeChatData?.title || 'Информация о чате'}
-            hideTitle
-            showCloseButton
-          >
-            <div className="flex flex-col items-center text-center gap-4 pt-1">
-              <AvatarFallback
-                label={chatPartner?.username || activeChatData?.title || '?'}
-                backgroundColor={
-                  chatPartner?.avatar_color ?? activeChatData?.avatar_color
-                }
-                className="w-20 h-20 text-3xl border border-slate-200 dark:border-sky-500/30"
-              />
 
-              <div className="text-base font-semibold text-slate-900 dark:text-slate-100">
-                <EmojiText text={chatPartner?.username || activeChatData?.title || 'Неизвестный'} />
-              </div>
-
-              <button
-                type="button"
-                onClick={() => setIsChatInfoOpen(false)}
-                className="inline-flex items-center gap-2 rounded-xl px-4 py-2 bg-sky-500 hover:bg-sky-600 text-white text-sm font-medium transition-colors"
-              >
-                <svg
-                  className="w-4 h-4"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-                </svg>
-                <span>Написать</span>
-              </button>
-            </div>
-          </Modal>
+          {modalMode === 'my-profile' && currentProfile && (
+            <UserProfileModal
+              onClose={closeModal}
+              user={currentProfile }
+              isMyProfile={true}
+            />
+          )}
+          {modalMode === 'chat-info' && (
+            <UserProfileModal
+              onClose={closeModal}
+              user={chatPartner}
+              isMyProfile={false}
+            />
+          )}
         </MainLayout>
       ) : (
         <AuthForm />

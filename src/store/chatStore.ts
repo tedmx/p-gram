@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import type { UiChatActive } from '../types'
+import type { ModalMode, UiChatActive } from '../types'
 
 interface EditingMessage {
   id: string
@@ -14,6 +14,9 @@ interface ChatState {
   setSidebarVisible: (visible: boolean) => void
   editingMessage: EditingMessage | null
   setEditingMessage: (msg: EditingMessage | null) => void
+  modalMode: ModalMode
+  openModal: (mode: ModalMode) => void
+  closeModal: () => void
 }
 
 export const useChatStore = create<ChatState>((set) => ({
@@ -29,4 +32,7 @@ export const useChatStore = create<ChatState>((set) => ({
   setSidebarVisible: (visible) => set({ sidebarVisible: visible }),
   editingMessage: null,
   setEditingMessage: (msg) => set({ editingMessage: msg }),
+  modalMode: null,
+  openModal: (mode) => set({ modalMode: mode }),
+  closeModal: () => set({ modalMode: null }),
 }))

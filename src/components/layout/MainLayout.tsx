@@ -1,17 +1,19 @@
 import { useState, useRef, useCallback, type ReactNode, useEffect } from 'react'
+import { useChatStore } from '../../store/chatStore'
 
 interface MainLayoutProps {
   children: ReactNode
   sidebar: ReactNode
   isChatOpen?: boolean
   sidebarVisible?: boolean
+  onMyProfileClick?: () => void
 }
 
 export const MainLayout = ({ 
   children, 
   sidebar, 
   isChatOpen = false,
-  sidebarVisible = false
+  sidebarVisible = false,
 }: MainLayoutProps) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [sidebarWidth, setSidebarWidth] = useState(499)
@@ -19,6 +21,7 @@ export const MainLayout = ({
   const containerRef = useRef<HTMLDivElement>(null)
   const startXRef = useRef(0)
   const startWidthRef = useRef(499)
+  const openModal = useChatStore(state => state.openModal)
 
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
     e.preventDefault()
@@ -101,6 +104,23 @@ export const MainLayout = ({
                 className="fixed inset-0 z-10"
               />
               <div className="absolute left-4 top-14 z-20 min-w-55 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-xl p-1.5">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsMenuOpen(false)
+                    openModal('my-profile')
+                  }}
+                  className="w-full text-left px-3 py-2 text-sm rounded-lg text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors flex items-center gap-2"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                  </svg>
+                  Мой профиль
+                </button>
+
+                {/* Разделитель */}
+                <div className="h-px bg-slate-200 dark:bg-slate-700 my-1" />
+
                 <button
                   type="button"
                   onClick={() => {

@@ -51,7 +51,7 @@ export const getMyChats = async (userId: string): Promise<UiChat[]> => {
         type,
         participants (
           user_id,
-          profiles (id, username, avatar_url, avatar_color)
+          profiles (id, username, avatar_url, avatar_color, bio, birthday)
         ),
         messages (
           id,

@@ -2,9 +2,9 @@ import { useNavigate } from 'react-router-dom'
 
 import { useChatStore } from '../../store/chatStore'
 import { type UiChat } from '../../types'
-import { AvatarFallback } from '../ui/AvatarFallback'
 import { EmojiText } from '../ui/EmojiText'
 import { SentIcon, ReadIcon } from './ReadStatus'
+import { Avatar } from '../ui/Avatar'
 
 interface ChatItemProps {
   chat: UiChat
@@ -39,10 +39,11 @@ export const ChatItem = ({ chat, isActive, currentUserId }: ChatItemProps) => {
           : 'hover:dark:bg-slate-800/50 hover:bg-slate-300/50 text-slate-300'
       }`}
     >
-      <AvatarFallback
-        label={chat.title}
+      <Avatar
+        src={chat.avatar_url} 
+        name={chat.title || '?'} 
         backgroundColor={chat.avatar_color}
-        className="w-12 h-12 shrink-0 text-xl"
+        className="w-12 h-12 shrink-0 text-xl" 
       />
 
       <div className="flex-1 min-w-0 flex flex-col gap-0.5">

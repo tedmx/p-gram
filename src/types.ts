@@ -6,6 +6,8 @@ export interface Profile {
   username: string
   avatar_url: string | null
   avatar_color: string | null
+  bio?: string        // Краткая биография
+  birthday?: string   // День рождения
 }
 
 export interface Message {
@@ -73,3 +75,5 @@ export interface SingleEmojiData {
   native: string;
   name: string;
 }
+
+export type ModalMode = 'chat-info' | 'my-profile' | null
