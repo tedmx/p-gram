@@ -223,6 +223,7 @@ export const MessageList = ({ chatId }: MessageListProps) => {
             </button>
             <button 
               onClick={() => {
+                if (!messageToDelete) return
                 handleDelete(messageToDelete)
                 setMessageToDelete(null)
               }}

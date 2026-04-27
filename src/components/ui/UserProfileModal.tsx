@@ -7,7 +7,7 @@ import type { Profile } from '../../types'
 import { EmojiText } from './EmojiText'
 import { Modal } from './Modal'
 
-import Cropper from 'react-easy-crop'
+import Cropper, { type Area } from 'react-easy-crop'
 import { getCroppedImg } from '../../utils/cropImage'
 import { Avatar } from './Avatar' // Используем новый компонент
 import { supabase } from '../../api/supabase' // Для прямого доступа к Storage
@@ -30,7 +30,7 @@ export const UserProfileModal = ({ onClose, user, isMyProfile = false }: UserPro
   const [imageToCrop, setImageToCrop] = useState<string | null>(null)
   const [crop, setCrop] = useState({ x: 0, y: 0 })
   const [zoom, setZoom] = useState(1)
-  const [croppedAreaPixels, setCroppedAreaPixels] = useState<any>(null)
+  const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area>()
   const [isUploading, setIsUploading] = useState(false)
 
   const updateProfileMutation = useMutation({
@@ -42,7 +42,7 @@ export const UserProfileModal = ({ onClose, user, isMyProfile = false }: UserPro
       // Если редактируем свой профиль - обновляем стор
       if (isMyProfile && currentUser) {
         const newUserState = { ...currentUser, ...updatedProfile }
-        setCurrentUser(newUserState as any) // Используем `setUser` из стора
+        setCurrentUser(newUserState)
       }
   
       queryClient.invalidateQueries({ queryKey: ['profile', user?.id] })
@@ -148,7 +148,7 @@ export const UserProfileModal = ({ onClose, user, isMyProfile = false }: UserPro
         )}
 
         {imageToCrop && (
-          <div className="fixed inset-0 z-[100] bg-slate-950/95 flex flex-col items-center justify-center p-4">
+          <div className="fixed inset-0 z-100 bg-slate-950/95 flex flex-col items-center justify-center p-4">
             <div className="relative w-full max-w-md aspect-square">
               <Cropper
                 image={imageToCrop}
@@ -211,7 +211,7 @@ export const UserProfileModal = ({ onClose, user, isMyProfile = false }: UserPro
               <label className="text-[11px] font-bold text-sky-500 uppercase px-1">О себе</label>
               <textarea
                 defaultValue={user.bio}
-                className="w-full mt-1 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-4 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-sky-500 min-h-[100px] resize-none"
+                className="w-full mt-1 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-4 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-sky-500 min-h-25 resize-none"
                 id="edit-bio"
                 placeholder="Расскажите о себе..."
               />
@@ -252,7 +252,7 @@ export const UserProfileModal = ({ onClose, user, isMyProfile = false }: UserPro
               {user.bio && (
                 <div className="bg-slate-100 dark:bg-slate-800/40 p-4 rounded-2xl w-full text-left">
                   <h4 className="text-[11px] font-bold text-sky-500 uppercase tracking-wider mb-1">О себе</h4>
-                  <p className="text-sm text-slate-700 dark:text-slate-200 leading-relaxed break-words">
+                  <p className="text-sm text-slate-700 dark:text-slate-200 leading-relaxed wrap-break-word">
                     {user.bio}
                   </p>
                 </div>

@@ -1,5 +1,6 @@
 import { useState, useRef, useCallback, type ReactNode, useEffect } from 'react'
 import { useChatStore } from '../../store/chatStore'
+import { supabase } from '../../api/supabase'
 
 interface MainLayoutProps {
   children: ReactNode
@@ -125,7 +126,7 @@ export const MainLayout = ({
                   type="button"
                   onClick={() => {
                     setIsMenuOpen(false)
-                    import('../../api/supabase').then((m) => m.supabase.auth.signOut())
+                    supabase.auth.signOut()
                   }}
                   className="w-full text-left px-3 py-2 text-sm rounded-lg text-slate-700 dark:text-slate-200 hover:bg-red-100 dark:hover:bg-red-500/20 hover:text-red-700 dark:hover:text-red-300 transition-colors"
                 >

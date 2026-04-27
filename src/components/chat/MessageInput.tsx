@@ -51,7 +51,7 @@ const Leaf = ({ attributes, children, leaf }: RenderLeafProps) => {
   if (leaf.emoji) {
     return (
       <span {...attributes} className="relative inline-block">
-        <EmojiText text={leaf.emojiChar} />
+        <EmojiText text={leaf.emojiChar || ''} />
         {/* Делаем оригинальный текст невидимым, но доступным для Slate */}
         <span className="absolute inset-0 opacity-0 pointer-events-none select-all overflow-hidden whitespace-nowrap">
           {children}
