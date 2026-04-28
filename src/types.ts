@@ -41,12 +41,15 @@ export interface UiChat {
   /** Есть при загрузке с сервера; может отсутствовать сразу после создания direct из поиска. */
   participants?: Profile[]
   lastMessage: Message | null
+  unread_count: number
 }
 
 /**
  * Данные открытого чата для шапки и модалок. Идентификатор хранится отдельно (activeChatId).
  */
-export type UiChatActive = Omit<UiChat, 'chat_id' | 'lastMessage'>
+export type UiChatActive = Omit<UiChat, 'chat_id' | 'lastMessage' | 'unread_count'> & {
+  unread_count?: number
+}
 
 export type CustomElement = { type: 'paragraph'; children: CustomText[] }
 

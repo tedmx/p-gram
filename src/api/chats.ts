@@ -64,7 +64,6 @@ export const getMyChats = async (userId: string): Promise<UiChat[]> => {
     `)
     .eq('user_id', userId)
     .order('created_at', { foreignTable: 'chats.messages', ascending: false })
-    .limit(1, { foreignTable: 'chats.messages' })
 
   if (error) throw error
   if (!data?.length) return []

@@ -100,3 +100,14 @@ export const markAsRead = async (messageId: string) => {
 
   if (error) throw error
 }
+
+export const markChatAsRead = async (chatId: string, userId: string) => {
+  const { error } = await supabase
+    .from('messages')
+    .update({ read: true })
+    .eq('chat_id', chatId)
+    .neq('sender_id', userId)
+    .eq('read', false)
+
+  if (error) console.error('Error marking as read:', error)
+}

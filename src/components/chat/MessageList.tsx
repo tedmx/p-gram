@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useChatStore } from '../../store/chatStore'
 import { MessageContextMenu } from './MessageContextMenu'
 import { SentIcon, ReadIcon } from './ReadStatus'
-import { getMessages, deleteMessage, markAsRead } from '../../api/messages'
+import { getMessages, deleteMessage, markAsRead, markChatAsRead } from '../../api/messages'
 import { Modal } from '../ui/Modal'
 import { EmojiText } from '../ui/EmojiText'
 
@@ -99,7 +99,7 @@ export const MessageList = ({ chatId }: MessageListProps) => {
     }
   }, [messages])
 
-  const { activeChatData } = useChatStore() // Достаем данные текущего чата
+  const { activeChatData, activeChatId } = useChatStore() // Достаем данные текущего чата
   const chatPartnerName = useMemo(() => {
     if (!activeChatData || !currentUser) return 'собеседника'
     
@@ -110,6 +110,16 @@ export const MessageList = ({ chatId }: MessageListProps) => {
     
     return partner?.username || 'собеседника'
   }, [activeChatData, currentUser])
+
+  // Пример интеграции в компонент с сообщениями
+  useEffect(() => {
+    if (activeChatId && currentUser?.id) {
+      markChatAsRead(activeChatId, currentUser.id).then(() => {
+        // Инвалидируем список чатов, чтобы счетчик в сайдбаре обновился (стал 0)
+        queryClient.invalidateQueries({ queryKey: ['my-chats'] })
+      })
+    }
+  }, [activeChatId, messages, currentUser.id, queryClient]) 
 
   if (isLoading) return <div className="p-4 text-slate-500 text-center">Загрузка сообщений...</div>
 

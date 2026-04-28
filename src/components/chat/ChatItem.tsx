@@ -30,6 +30,7 @@ export const ChatItem = ({ chat, isActive, currentUserId }: ChatItemProps) => {
           avatar_url: chat.avatar_url,
           avatar_color: chat.avatar_color,
           participants: chat.participants,
+          unread_count: chat.unread_count,
         })
         navigate(`/chat/${chat.chat_id}`)
       }}
@@ -46,14 +47,16 @@ export const ChatItem = ({ chat, isActive, currentUserId }: ChatItemProps) => {
         className="w-12 h-12 shrink-0 text-xl" 
       />
 
-      <div className="flex-1 min-w-0 flex flex-col gap-0.5">
-        <div className="flex justify-between items-center gap-2">
+      <div className="flex-1 min-w-0">
+        {/* Верхняя строка: Имя + Статус + Время */}
+        <div className="flex justify-between items-center mb-0.5">
           <span className={`
             text-sm font-semibold truncate
             ${isActive ? 'text-white' : 'text-slate-800 dark:text-sky-400'}
           `}>
             <EmojiText text={chat.title} />
           </span>
+
           <div className="flex items-center gap-1 shrink-0">
             {isMyLastMessage && chat.lastMessage && (
               chat.lastMessage.read ? (
@@ -67,14 +70,22 @@ export const ChatItem = ({ chat, isActive, currentUserId }: ChatItemProps) => {
             </span>
           </div>
         </div>
-        <div className={`
-          text-[13px] truncate
-          ${isActive ? 'text-white' : 'text-slate-500'}
-        `}>
-          {chat.lastMessage?.content ? (
-            <EmojiText text={chat.lastMessage.content} />
-          ) : (
-            'Нет сообщений'
+
+        {/* Нижняя строка: Превью (увеличенное) + Круг с числом */}
+        <div className="flex justify-between items-center gap-2">
+          <div className={`
+            text-[14px] truncate flex-1
+            ${isActive ? 'text-sky-100' : 'text-slate-500 dark:text-slate-400'}
+          `}>
+            {chat.lastMessage?.content || 'Нет сообщений'}
+          </div>
+
+          {chat.unread_count > 0 && (
+            <div className="bg-sky-500 text-white text-[10px] font-bold min-w-[20px] h-5 flex items-center justify-center rounded-full px-1.5 shadow-sm animate-in zoom-in duration-200 shrink-0">
+              <span className="leading-none flex items-center justify-center pt-[0.5px]">
+                {chat.unread_count > 99 ? '99+' : chat.unread_count}
+              </span>
+            </div>
           )}
         </div>
       </div>

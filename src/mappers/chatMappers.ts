@@ -64,6 +64,11 @@ export function mapMyChatsRowToUiChat(
 
   const lastRaw = nested.messages?.[0]
 
+  // Считаем непрочитанные: те, где read === false И отправитель не я
+  const unreadCount = nested.messages?.filter(
+    (m) => !m.read && m.sender_id !== currentUserId
+  ).length ?? 0
+
   return {
     chat_id: row.chat_id,
     title: partner?.username ?? 'Неизвестный',
@@ -81,6 +86,7 @@ export function mapMyChatsRowToUiChat(
           read: lastRaw.read,
         }
       : null,
+    unread_count: unreadCount, // Добавляем в возвращаемый объект
   }
 }
 
