@@ -50,6 +50,7 @@ export const Sidebar = () => {
         type: 'direct',
         avatar_color: data.avatar_color,
         avatar_url: data.avatar_url,
+        is_manual_unread: false,
       })
       navigate(`/chat/${data.chatId}`)
       setSearchQuery('')

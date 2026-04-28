@@ -3,10 +3,7 @@ import type { ChatType, Profile, UiChat } from '../types'
 /** Одна строка ответа Supabase: join participants → chats (вложенный select). */
 export interface SupabaseMyChatsRow {
   chat_id: string
-  /**
-   * Вложенный чат: в JSON PostgREST обычно отдаёт один объект (many-to-one).
-   * Сгенерированные типы клиента иногда описывают это как массив из одного элемента — поддерживаем оба.
-   */
+  is_manual_unread: boolean
   chats: SupabaseMyChatsNested | SupabaseMyChatsNested[] | null
 }
 
@@ -86,7 +83,8 @@ export function mapMyChatsRowToUiChat(
           read: lastRaw.read,
         }
       : null,
-    unread_count: unreadCount, // Добавляем в возвращаемый объект
+    unread_count: unreadCount,
+    is_manual_unread: row.is_manual_unread ?? false,
   }
 }
 

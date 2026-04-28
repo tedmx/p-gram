@@ -2,13 +2,14 @@ import { useQuery, useMutation, useQueryClient  } from '@tanstack/react-query'
 import { useAuthStore } from '../../store/authStore'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useChatStore } from '../../store/chatStore'
-import { MessageContextMenu } from './MessageContextMenu'
 import { SentIcon, ReadIcon } from './ReadStatus'
 import { getMessages, deleteMessage, markAsRead, markChatAsRead } from '../../api/messages'
 import { Modal } from '../ui/Modal'
 import { EmojiText } from '../ui/EmojiText'
+import { GenericMenu } from '../ui/GenericMenu'
 
 import type { Message, Profile } from '../../types'
+import { Pencil, Trash2 } from 'lucide-react'
 
 interface MessageListProps {
   chatId: string
@@ -192,14 +193,22 @@ export const MessageList = ({ chatId }: MessageListProps) => {
           )
         })}
         {menuPosition && (
-          <MessageContextMenu 
+          <GenericMenu
             position={{ x: menuPosition.x, y: menuPosition.y }}
-            onClose={() => setMenuPosition(null)} 
-            onEdit={() => setEditingMessage({ id: menuPosition.msg.id, content: menuPosition.msg.content })}
-            onDelete={() => {
-              setMessageToDelete(menuPosition.msg.id)
-              setMenuPosition(null)
-            }}
+            onClose={() => setMenuPosition(null)}
+            options={[
+              {
+                label: 'Редактировать',
+                icon: Pencil,
+                onClick: () => setEditingMessage({ id: menuPosition.msg.id, content: menuPosition.msg.content })
+              },
+              {
+                label: 'Удалить',
+                icon: Trash2,
+                isDestructive: true,
+                onClick: () => setMessageToDelete(menuPosition.msg.id)
+              }
+            ]}
           />
         )}
         <Modal

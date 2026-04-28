@@ -5,6 +5,13 @@ import { type UiChat } from '../../types'
 import { EmojiText } from '../ui/EmojiText'
 import { SentIcon, ReadIcon } from './ReadStatus'
 import { Avatar } from '../ui/Avatar'
+import { GenericMenu, type MenuOption } from '../ui/GenericMenu'
+import { useState } from 'react'
+import { markChatAsRead } from '../../api/messages'
+import { queryClient } from '../../api/queryClient'
+import { setManualUnreadStatus } from '../../api/chats'
+import { Info, MessageSquareCheck, MessageSquareDot } from 'lucide-react'
+import { formatMessageDate } from '../../utils/dateUtils'
 
 interface ChatItemProps {
   chat: UiChat
@@ -16,10 +23,47 @@ export const ChatItem = ({ chat, isActive, currentUserId }: ChatItemProps) => {
   const setActiveChat = useChatStore(state => state.setActiveChat)
   const navigate = useNavigate()
   const isMyLastMessage = chat.lastMessage?.sender_id === currentUserId
+  const [menuPos, setMenuPos] = useState<{ x: number, y: number } | null>(null)
+  const {openModal} = useChatStore()
 
-  const time = chat.lastMessage
-    ? new Date(chat.lastMessage.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-    : ''
+  const isManual = chat.is_manual_unread
+  const showUnread = chat.unread_count > 0 || isManual
+
+  const isCurrentlyUnread = chat.unread_count > 0 || chat.is_manual_unread
+
+  const handleContextMenu = (e: React.MouseEvent) => {
+    e.preventDefault()
+    setMenuPos({ x: e.clientX, y: e.clientY })
+  }
+
+  const menuOptions: MenuOption[] = [
+    {
+      label: isCurrentlyUnread ? 'Пометить прочитанным' : 'Пометить непрочитанным',
+      icon: isCurrentlyUnread ? MessageSquareCheck : MessageSquareDot,
+      onClick: async () => {
+        const newStatus = !isCurrentlyUnread
+        
+        // 1. Отправляем запрос в БД
+        await setManualUnreadStatus(chat.chat_id, currentUserId, newStatus)
+        
+        // 2. Если помечаем прочитанным и есть реальные сообщения — гасим их как раньше
+        if (isCurrentlyUnread && chat.unread_count > 0) {
+          await markChatAsRead(chat.chat_id, currentUserId)
+        }
+
+        // 3. Обновляем список чатов, чтобы интерфейс перерисовался с данными из БД
+        queryClient.invalidateQueries({ queryKey: ['my-chats'] })
+      }
+    },
+    {
+      label: 'Информация о чате',
+      icon: Info,
+      onClick: () => {
+        setActiveChat(chat.chat_id, chat) 
+        openModal('chat-info')
+      }
+    }
+  ]
 
   return (
     <div 
@@ -31,6 +75,7 @@ export const ChatItem = ({ chat, isActive, currentUserId }: ChatItemProps) => {
           avatar_color: chat.avatar_color,
           participants: chat.participants,
           unread_count: chat.unread_count,
+          is_manual_unread: chat.is_manual_unread,
         })
         navigate(`/chat/${chat.chat_id}`)
       }}
@@ -39,6 +84,7 @@ export const ChatItem = ({ chat, isActive, currentUserId }: ChatItemProps) => {
           'bg-sky-600 text-white'
           : 'hover:dark:bg-slate-800/50 hover:bg-slate-300/50 text-slate-300'
       }`}
+      onContextMenu={handleContextMenu}
     >
       <Avatar
         src={chat.avatar_url} 
@@ -66,7 +112,7 @@ export const ChatItem = ({ chat, isActive, currentUserId }: ChatItemProps) => {
               )
             )}
             <span className={`text-[11px] ${isActive ? 'text-sky-100' : 'text-slate-500'}`}>
-              {time}
+              {chat.lastMessage ? formatMessageDate(chat.lastMessage.created_at) : ''}
             </span>
           </div>
         </div>
@@ -80,15 +126,26 @@ export const ChatItem = ({ chat, isActive, currentUserId }: ChatItemProps) => {
             {chat.lastMessage?.content || 'Нет сообщений'}
           </div>
 
-          {chat.unread_count > 0 && (
-            <div className="bg-sky-500 text-white text-[10px] font-bold min-w-[20px] h-5 flex items-center justify-center rounded-full px-1.5 shadow-sm animate-in zoom-in duration-200 shrink-0">
-              <span className="leading-none flex items-center justify-center pt-[0.5px]">
-                {chat.unread_count > 99 ? '99+' : chat.unread_count}
-              </span>
+          {showUnread && (
+            <div className={`
+              bg-sky-500 text-white rounded-full flex items-center justify-center shadow-sm transition-all
+              ${isManual && chat.unread_count === 0 
+                ? 'w-5 h-5 my-auto' // Точка для ручной пометки
+                : 'min-w-5 h-5 px-1.5 text-[10px] font-bold'}
+            `}>
+              {chat.unread_count > 0 ? (chat.unread_count > 99 ? '99+' : chat.unread_count) : ''}
             </div>
           )}
         </div>
       </div>
+
+      {menuPos && (
+        <GenericMenu
+          position={menuPos} 
+          options={menuOptions} 
+          onClose={() => setMenuPos(null)} 
+        />
+      )}
     </div>
   )
 }

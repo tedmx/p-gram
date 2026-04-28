@@ -46,6 +46,7 @@ export const getMyChats = async (userId: string): Promise<UiChat[]> => {
     .from('participants')
     .select(`
       chat_id,
+      is_manual_unread,
       chats (
         id,
         type,
@@ -67,6 +68,23 @@ export const getMyChats = async (userId: string): Promise<UiChat[]> => {
 
   if (error) throw error
   if (!data?.length) return []
+  
+  // Сортируем сам массив чатов на стороне фронтенда перед возвратом
+  const mappedChats = mapMyChatsRowsToUiChats(data as SupabaseMyChatsRow[], userId)
 
-  return mapMyChatsRowsToUiChats(data as SupabaseMyChatsRow[], userId)
+  return mappedChats.sort((a, b) => {
+    const timeA = a.lastMessage ? new Date(a.lastMessage.created_at).getTime() : 0
+    const timeB = b.lastMessage ? new Date(b.lastMessage.created_at).getTime() : 0
+    return timeB - timeA // Свежие сверху
+  })
+}
+
+export const setManualUnreadStatus = async (chatId: string, userId: string, status: boolean) => {
+  const { error } = await supabase
+    .from('participants')
+    .update({ is_manual_unread: status })
+    .eq('chat_id', chatId)
+    .eq('user_id', userId)
+
+  if (error) throw error
 }

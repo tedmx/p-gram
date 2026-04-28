@@ -2,6 +2,13 @@ import { useNavigate } from 'react-router-dom'
 import { useChatStore } from '../../store/chatStore'
 import { Avatar } from '../ui/Avatar'
 import { EmojiText } from '../ui/EmojiText'
+import { GenericMenu } from '../ui/GenericMenu'
+import { markChatAsRead } from '../../api/messages'
+import { queryClient } from '../../api/queryClient'
+import { useState } from 'react'
+import { useAuthStore } from '../../store/authStore'
+import { setManualUnreadStatus } from '../../api/chats'
+import { Info, MessageSquareCheck, MessageSquareDot } from 'lucide-react'
 
 export const ChatHeader = () => {
   const navigate = useNavigate()
@@ -13,6 +20,18 @@ export const ChatHeader = () => {
     setSidebarVisible,
     openModal 
   } = useChatStore()
+
+  const [menuPos, setMenuPos] = useState<{ x: number, y: number } | null>(null)
+  const {manualUnread} = useChatStore()
+  const {user} = useAuthStore()
+
+  const isCurrentlyUnread = (activeChatData?.unread_count ?? 0) > 0 || !!manualUnread[activeChatId!]
+
+  const toggleDropdown = (e: React.MouseEvent) => {
+    const rect = e.currentTarget.getBoundingClientRect()
+    // Позиционируем меню под кнопкой, выравнивая по правому краю
+    setMenuPos({ x: rect.left - 140, y: rect.bottom + 8 })
+  }
 
   if (!activeChatId) return null
 
@@ -31,6 +50,32 @@ export const ChatHeader = () => {
       navigate('/')
     }
   }
+
+  const menuOptions = [
+    {
+      label: isCurrentlyUnread ? 'Пометить прочитанным' : 'Пометить непрочитанным',
+      icon: isCurrentlyUnread ? MessageSquareCheck : MessageSquareDot,
+      onClick: async () => {
+        const newStatus = !isCurrentlyUnread
+        
+        // 1. Отправляем запрос в БД
+        await setManualUnreadStatus(activeChatId, user.id, newStatus)
+
+        // 2. Если помечаем прочитанным и есть реальные сообщения — гасим их как раньше
+        if (isCurrentlyUnread && activeChatData.unread_count > 0) {
+          await markChatAsRead(activeChatId, user.id)
+        }
+
+        // 3. Обновляем список чатов, чтобы интерфейс перерисовался с данными из БД
+        queryClient.invalidateQueries({ queryKey: ['my-chats'] })
+      }
+    },
+    {
+      label: 'Информация о чате',
+      icon: Info,
+      onClick: () => openModal('chat-info')
+    }
+  ]
 
   return (
     <header className="h-16 bg-white dark:bg-slate-900 w-full flex items-center shrink-0 border-b dark:border-slate-800">
@@ -71,6 +116,20 @@ export const ChatHeader = () => {
           <div className="text-[10px] text-emerald-500">в сети</div>
         </div>
       </button>
+
+      <button onClick={toggleDropdown} className="p-2">
+        <svg className="w-5 h-5 text-slate-500" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z" />
+        </svg>
+      </button>
+
+      {menuPos && (
+        <GenericMenu
+          position={menuPos} 
+          options={menuOptions} // Те же опции, что и выше
+          onClose={() => setMenuPos(null)} 
+        />
+      )}
     </header>
   )
 }

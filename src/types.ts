@@ -42,6 +42,7 @@ export interface UiChat {
   participants?: Profile[]
   lastMessage: Message | null
   unread_count: number
+  is_manual_unread: boolean
 }
 
 /**
