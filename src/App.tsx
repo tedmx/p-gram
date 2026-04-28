@@ -7,11 +7,10 @@ import { MessageList } from './components/chat/MessageList'
 import { MessageInput } from './components/chat/MessageInput'
 import { useChatStore } from './store/chatStore'
 import { useEffect, useMemo, useState } from 'react'
-import { EmojiText } from './components/ui/EmojiText'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { UserProfileModal } from './components/ui/UserProfileModal'
 import { useProfile } from './hooks/useProfile'
-import { Avatar } from './components/ui/Avatar'
+import { ChatHeader } from './components/chat/ChatHeader'
 
 function App() {
   useAuth() // Запускаем отслеживание сессии
@@ -19,15 +18,13 @@ function App() {
   const { user, isLoading } = useAuthStore()
   const { data: currentProfile, isLoading: profileLoading } = useProfile()
 
-  const { activeChatId, activeChatData, setActiveChat, sidebarVisible, setSidebarVisible } = useChatStore()
+  const { activeChatId, activeChatData, setActiveChat, sidebarVisible } = useChatStore()
   const [isChatInfoOpen, setIsChatInfoOpen] = useState(false)
   const navigate = useNavigate()
   const location = useLocation()
 
   const modalMode = useChatStore(state => state.modalMode)
   const closeModal = useChatStore(state => state.closeModal)
-
-  const openModal = useChatStore(state => state.openModal)
 
   const chatPartner = useMemo(() => {
     if (!activeChatData || !user) return null
@@ -83,74 +80,7 @@ function App() {
         >
           {/* Правая часть: Окно чата (Контент) */}
           <div className="flex flex-col h-full">
-            {activeChatId && (
-              <header
-                className="h-16 bg-white dark:bg-slate-900 w-full flex items-center"
-                onClick={() => {
-                  openModal('chat-info')
-                }}
-              >
-                {/* Back/Close button - logic depends on viewport width and sidebar state */}
-                <button
-                  type="button"
-                  onClick={() => {
-                    const isTablet = window.innerWidth >= 601 && window.innerWidth <= 925
-                    
-                    if (isTablet) {
-                      if (sidebarVisible) {
-                        // State 3 → State 1: Close chat completely
-                        setActiveChat(null)
-                        setIsChatInfoOpen(false)
-                        navigate('/')
-                      } else {
-                        // State 2 → State 3: Show sidebar
-                        setSidebarVisible(true)
-                      }
-                    } else {
-                      // Mobile (<=600px): Close chat completely
-                      setActiveChat(null)
-                      setIsChatInfoOpen(false)
-                      navigate('/')
-                    }
-                  }}
-                  className="lg:hidden w-14 h-full flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-                >
-                  {sidebarVisible ? (
-                    // State 3: Close (X) icon
-                    <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  ) : (
-                    // State 2: Back arrow icon
-                    <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
-                    </svg>
-                  )}
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    openModal('chat-info')
-                  }}
-                  disabled={!activeChatData}
-                  className="flex-1 h-full flex items-center gap-3 px-6 text-left transition-colors hover:bg-slate-100/80 dark:hover:bg-slate-800/40 disabled:opacity-60 disabled:cursor-not-allowed"
-                >
-                  <Avatar
-                    src={activeChatData?.avatar_url} 
-                    name={activeChatData?.title || '?'} 
-                    backgroundColor={activeChatData?.avatar_color}
-                    className="w-10 h-10 border border-white/40 dark:border-sky-500/30" 
-                  />
-                  <div className="text-left">
-                    <div className="text-sm text-slate-800 dark:text-slate-100 font-semibold">
-                      <EmojiText text={activeChatData?.title || 'Чат'} />
-                    </div>
-                    <div className="text-[10px] text-emerald-500">в сети</div>
-                  </div>
-                </button>
-              </header>
-            )}
+            <ChatHeader />
             
             <div className="flex-1 flex flex-col relative telegram-bg-container w-full overflow-hidden bg-chat-gradient">
               {activeChatId ? (
