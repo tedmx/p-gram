@@ -10,7 +10,7 @@ import { useState } from 'react'
 import { markChatAsRead } from '../../api/messages'
 import { queryClient } from '../../api/queryClient'
 import { setManualUnreadStatus } from '../../api/chats'
-import { Info, MessageSquareCheck, MessageSquareDot } from 'lucide-react'
+import { Bookmark, Info, MessageSquareCheck, MessageSquareDot } from 'lucide-react'
 import { formatMessageDate } from '../../utils/dateUtils'
 
 interface ChatItemProps {
@@ -30,6 +30,9 @@ export const ChatItem = ({ chat, isActive, currentUserId }: ChatItemProps) => {
   const showUnread = chat.unread_count > 0 || isManual
 
   const isCurrentlyUnread = chat.unread_count > 0 || chat.is_manual_unread
+
+  const isSavedMessages = chat.type === 'direct' && chat.participants?.length === 1
+  const displayTitle = isSavedMessages ? 'Избранное' : chat.title
 
   const handleContextMenu = (e: React.MouseEvent) => {
     e.preventDefault()
@@ -87,11 +90,13 @@ export const ChatItem = ({ chat, isActive, currentUserId }: ChatItemProps) => {
       onContextMenu={handleContextMenu}
     >
       <Avatar
-        src={chat.avatar_url} 
-        name={chat.title || '?'} 
-        backgroundColor={chat.avatar_color}
+        src={isSavedMessages ? null : chat.avatar_url} 
+        name={displayTitle || '?'} 
+        backgroundColor={isSavedMessages ? 'rgb(14 165 233)' : chat.avatar_color} 
         className="w-12 h-12 shrink-0 text-xl" 
-      />
+      >
+        {isSavedMessages && <Bookmark className="w-6 h-6 fill-white text-white" />}
+      </Avatar>
 
       <div className="flex-1 min-w-0">
         {/* Верхняя строка: Имя + Статус + Время */}
@@ -100,7 +105,7 @@ export const ChatItem = ({ chat, isActive, currentUserId }: ChatItemProps) => {
             text-sm font-semibold truncate
             ${isActive ? 'text-white' : 'text-slate-800 dark:text-sky-400'}
           `}>
-            <EmojiText text={chat.title} />
+            <EmojiText text={displayTitle} />
           </span>
 
           <div className="flex items-center gap-1 shrink-0">

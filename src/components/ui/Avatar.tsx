@@ -5,9 +5,10 @@ type AvatarProps = {
   name: string
   className?: string
   backgroundColor?: string | null
+  children?: React.ReactNode
 }
 
-export const Avatar = ({ src, name, className = '', backgroundColor }: AvatarProps) => {
+export const Avatar = ({ src, name, className = '', backgroundColor, children }: AvatarProps) => {
   if (src) {
     return (
       <img
@@ -23,6 +24,8 @@ export const Avatar = ({ src, name, className = '', backgroundColor }: AvatarPro
       label={name}
       backgroundColor={backgroundColor}
       className={className}
-    />
+    >
+      {children}
+    </AvatarFallback>
   )
 }

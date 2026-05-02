@@ -5,12 +5,14 @@ type AvatarFallbackProps = {
   label: string
   backgroundColor?: string | null
   className?: string
+  children?: React.ReactNode
 }
 
 export const AvatarFallback = ({
   label,
   backgroundColor,
   className = '',
+  children,
 }: AvatarFallbackProps) => {
   const initial = label.trim()[0]?.toUpperCase() ?? '?'
   const bg = backgroundColor || DEFAULT_AVATAR_COLOR
@@ -23,7 +25,7 @@ export const AvatarFallback = ({
         backgroundImage: `linear-gradient(white -100%, ${bg})`
       }}
     >
-      {initial}
+      {children || initial}
     </div>
   )
 }

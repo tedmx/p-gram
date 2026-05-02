@@ -8,7 +8,7 @@ import { queryClient } from '../../api/queryClient'
 import { useState } from 'react'
 import { useAuthStore } from '../../store/authStore'
 import { setManualUnreadStatus } from '../../api/chats'
-import { Info, MessageSquareCheck, MessageSquareDot } from 'lucide-react'
+import { Bookmark, Info, MessageSquareCheck, MessageSquareDot } from 'lucide-react'
 
 export const ChatHeader = () => {
   const navigate = useNavigate()
@@ -26,6 +26,9 @@ export const ChatHeader = () => {
   const {user} = useAuthStore()
 
   const isCurrentlyUnread = (activeChatData?.unread_count ?? 0) > 0 || !!manualUnread[activeChatId!]
+
+  const isSavedMessages = activeChatData?.type === 'direct' && activeChatData?.participants?.length === 1
+  const title = isSavedMessages ? 'Избранное' : activeChatData?.title
 
   const toggleDropdown = (e: React.MouseEvent) => {
     const rect = e.currentTarget.getBoundingClientRect()
@@ -104,16 +107,20 @@ export const ChatHeader = () => {
         className="flex-1 h-full flex items-center gap-3 px-6 text-left transition-colors hover:bg-slate-100/80 dark:hover:bg-slate-800/40 disabled:opacity-60 disabled:cursor-not-allowed"
       >
         <Avatar
-          src={activeChatData?.avatar_url} 
-          name={activeChatData?.title || '?'} 
-          backgroundColor={activeChatData?.avatar_color}
+          src={isSavedMessages ? null : activeChatData?.avatar_url} 
+          name={title || '?'} 
+          backgroundColor={isSavedMessages ? 'rgb(14 165 233)' : activeChatData?.avatar_color}
           className="w-10 h-10 border border-white/40 dark:border-sky-500/30" 
-        />
+        >
+          {isSavedMessages && <Bookmark className="w-5 h-5 fill-white text-white" />}
+        </Avatar>
         <div className="text-left">
           <div className="text-sm text-slate-800 dark:text-slate-100 font-semibold">
-            <EmojiText text={activeChatData?.title || 'Чат'} />
+            <EmojiText text={title || 'Чат'} />
           </div>
-          <div className="text-[10px] text-emerald-500">в сети</div>
+          {!isSavedMessages && (
+            <div className="text-[10px] text-emerald-500">в сети</div>
+          )}
         </div>
       </button>
 

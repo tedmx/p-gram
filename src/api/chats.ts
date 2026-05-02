@@ -6,6 +6,8 @@ import {
 } from '../mappers/chatMappers'
 
 export const getOrCreateChat = async (currentUserId: string, targetUserId: string) => {
+  const isSavedMessages = currentUserId === targetUserId
+
   // 1. Ищем существующий приватный чат
   // Мы ищем чаты, где оба пользователя являются участниками
   const { data: existingChat, error: searchError } = await supabase
@@ -27,10 +29,12 @@ export const getOrCreateChat = async (currentUserId: string, targetUserId: strin
   if (chatError) throw chatError
 
   // 3. Добавляем участников
-  const participants = [
-    { chat_id: newChat.id, user_id: currentUserId },
-    { chat_id: newChat.id, user_id: targetUserId }
-  ]
+  const participants = isSavedMessages 
+    ? [{ chat_id: newChat.id, user_id: currentUserId }]
+    : [
+        { chat_id: newChat.id, user_id: currentUserId },
+        { chat_id: newChat.id, user_id: targetUserId }
+      ]
 
   const { error: partError } = await supabase
     .from('participants')
