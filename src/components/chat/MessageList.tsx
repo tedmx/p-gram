@@ -10,6 +10,7 @@ import { GenericMenu } from '../ui/GenericMenu'
 
 import type { Message, Profile } from '../../types'
 import { Pencil, Trash2 } from 'lucide-react'
+import { supabase } from '../../api/supabase'
 
 interface MessageListProps {
   chatId: string
@@ -36,7 +37,6 @@ export const MessageList = ({ chatId }: MessageListProps) => {
   const { data: messages, isLoading } = useQuery({
     queryKey: ['messages', chatId],
     queryFn: () => getMessages(chatId),
-    refetchInterval: 3000 // Временный "поллинг" каждые 3 сек, пока не включим Realtime
   })
 
   const { mutate: markRead } = useMutation({
@@ -52,14 +52,28 @@ export const MessageList = ({ chatId }: MessageListProps) => {
   })
 
   const { mutate: handleDelete } = useMutation({
-    mutationFn: (id: string) => deleteMessage(id),
-    onSuccess: () => {
-      // Инвалидируем кеш, чтобы сообщение исчезло из списка
-      queryClient.invalidateQueries({ queryKey: ['messages', chatId] })
+    mutationFn: (messageId: string) => deleteMessage(messageId),
+    // 1. Сразу убираем сообщение из интерфейса
+    onMutate: async (messageId) => {
+      await queryClient.cancelQueries({ queryKey: ['messages', chatId] })
+      const previousMessages = queryClient.getQueryData<Message[]>(['messages', chatId])
+
+      queryClient.setQueryData(['messages', chatId], (old: Message[] = []) =>
+        old.filter((m) => m.id !== messageId)
+      )
+
+      return { previousMessages }
+    },
+    // 2. Если ошибка на сервере — возвращаем сообщение на место
+    onError: (_err, _messageId, context) => {
+      if (context?.previousMessages) {
+        queryClient.setQueryData(['messages', chatId], context.previousMessages)
+      }
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['my-chats'] })
     }
   })
-
 
   // IntersectionObserver для отметки прочтения
   useEffect(() => {
@@ -121,6 +135,57 @@ export const MessageList = ({ chatId }: MessageListProps) => {
       })
     }
   }, [activeChatId, messages, currentUser.id, queryClient]) 
+
+  useEffect(() => {
+  if (!chatId) return
+
+  // 1. Создаем канал для конкретного чата
+  const channel = supabase
+    .channel(`chat-room-${chatId}`)
+    .on(
+      'postgres_changes',
+      {
+        event: '*', // Слушаем INSERT, UPDATE, DELETE
+        schema: 'public',
+        table: 'messages',
+        filter: `chat_id=eq.${chatId}`,
+      },
+      (payload) => {
+        const { eventType, new: newMessage, old: oldMessage } = payload
+
+        if (eventType === 'INSERT') {
+          // Мгновенно добавляем новое сообщение в список
+          queryClient.setQueryData(['messages', chatId], (old: Message[] = []) => {
+            // Проверка, чтобы не дублировать сообщения (если сработал Optimistic Update)
+            if (old.some(m => m.id === newMessage.id)) return old
+            return [...old, newMessage]
+          })
+        }
+
+        if (eventType === 'UPDATE') {
+          // Обновляем существующее сообщение (прочитано/ред.)
+          queryClient.setQueryData(['messages', chatId], (old: Message[] = []) =>
+            old.map((m) => (m.id === newMessage.id ? { ...m, ...newMessage } : m))
+          )
+        }
+
+        if (eventType === 'DELETE') {
+          queryClient.setQueryData(['messages', chatId], (old: Message[] = []) => {
+            // Используем payload.old.id, так как в 'old' при удалении часто только ID
+            const deletedId = oldMessage?.id || (payload.old as { id: string }).id
+            return old.filter((m) => m.id !== deletedId)
+          })
+        }
+
+        queryClient.invalidateQueries({ queryKey: ['my-chats'] })
+      }
+    )
+    .subscribe()
+
+  return () => {
+    supabase.removeChannel(channel)
+  }
+}, [chatId, queryClient])
 
   if (isLoading) return <div className="p-4 text-slate-500 text-center">Загрузка сообщений...</div>
 
