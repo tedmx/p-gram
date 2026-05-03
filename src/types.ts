@@ -17,6 +17,7 @@ export interface Message {
   content: string
   created_at: string
   read: boolean
+  reply_to_id?: string | null
   is_sending?: boolean
 }
 

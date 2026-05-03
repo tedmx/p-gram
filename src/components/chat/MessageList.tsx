@@ -9,7 +9,7 @@ import { EmojiText } from '../ui/EmojiText'
 import { GenericMenu } from '../ui/GenericMenu'
 
 import type { Message, Profile } from '../../types'
-import { Pencil, Trash2 } from 'lucide-react'
+import { Pencil, Reply, Trash2 } from 'lucide-react'
 import { supabase } from '../../api/supabase'
 
 interface MessageListProps {
@@ -20,7 +20,7 @@ export const MessageList = ({ chatId }: MessageListProps) => {
   const currentUser = useAuthStore(state => state.user)
   const queryClient = useQueryClient()
 
-  const { editingMessage, setEditingMessage } = useChatStore()
+  const { editingMessage, setEditingMessage, setReplyMessage } = useChatStore()
   const [menuPosition, setMenuPosition] = useState<{
     x: number,
     y: number,
@@ -215,6 +215,17 @@ export const MessageList = ({ chatId }: MessageListProps) => {
                     : ''
                 }
               `}>
+                {msg.reply_to_id && (
+                  <div className="mb-2 flex flex-col border-l-2 border-sky-400 dark:border-sky-300 bg-black/5 dark:bg-white/10 px-2 py-1 rounded-sm cursor-pointer hover:bg-black/10 dark:hover:bg-white/20 transition-colors">
+                    <div className="text-[11px] font-bold text-sky-600 dark:text-sky-300">
+                      {/* Пытаемся найти автора в списке сообщений или просто пишем "Ответ" */}
+                      {messages.find(m => m.id === msg.reply_to_id)?.sender_id === currentUser?.id ? 'Вы' : 'Собеседник'}
+                    </div>
+                    <div className="text-xs opacity-70 truncate max-w-xs">
+                      {messages.find(m => m.id === msg.reply_to_id)?.content || 'Сообщение удалено'}
+                    </div>
+                  </div>
+                )}
                 {msg.image_url && (
                   <img 
                     src={msg.image_url} 
@@ -262,6 +273,13 @@ export const MessageList = ({ chatId }: MessageListProps) => {
             position={{ x: menuPosition.x, y: menuPosition.y }}
             onClose={() => setMenuPosition(null)}
             options={[
+              {
+                label: 'Ответить',
+                icon: Reply,
+                onClick: () => {
+                  setReplyMessage(menuPosition.msg)
+                }
+              },
               {
                 label: 'Редактировать',
                 icon: Pencil,

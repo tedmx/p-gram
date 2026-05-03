@@ -3,7 +3,7 @@ import { createEditor, type Descendant, Node, Transforms, Text, Range, Editor, t
 import { Slate, Editable, withReact, type RenderLeafProps, ReactEditor } from 'slate-react'
 import emojiRegex from 'emoji-regex'
 import Picker from '@emoji-mart/react'
-import { Paperclip } from 'lucide-react'
+import { Paperclip, Reply, X } from 'lucide-react'
 
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { sendMessage, updateMessage } from '../../api/messages'
@@ -82,7 +82,7 @@ export const MessageInput = ({ chatId }: { chatId: string }) => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
 
-  const { editingMessage, setEditingMessage } = useChatStore()
+  const { editingMessage, setEditingMessage, replyMessage, setReplyMessage } = useChatStore()
 
   const lastSyncedId = useRef<string | null>(null)
 
@@ -161,9 +161,8 @@ export const MessageInput = ({ chatId }: { chatId: string }) => {
   }, [])
 
   const { mutate: handleSend } = useMutation({
-    mutationFn: (content: string) => sendMessage(chatId, currentUser!.id, content),
-    // Шаг 1: Подготовка оптимистичного обновления
-    onMutate: async (content) => {
+    mutationFn: ({content, replyId}: { content: string, replyId?: string | null }) => sendMessage(chatId, currentUser!.id, content, undefined, replyId),
+    onMutate: async ({content, replyId}) => {
       // Отменяем исходящие перезапросы, чтобы они не перезаписали наш оптимистичный стейт
       await queryClient.cancelQueries({ queryKey: ['messages', chatId] })
 
@@ -178,7 +177,8 @@ export const MessageInput = ({ chatId }: { chatId: string }) => {
         content,
         created_at: new Date().toISOString(),
         read: false,
-        is_sending: true, // Добавим этот флаг для UI (опционально)
+        is_sending: true,
+        reply_to_id: replyId,
       }
 
       // Обновляем кэш вручную
@@ -280,7 +280,11 @@ export const MessageInput = ({ chatId }: { chatId: string }) => {
         handleUpdate({ id: editingMessage.id, content })
         setEditingMessage(null)
       } else {
-        handleSend(content)
+        handleSend({ 
+          content, 
+          replyId: replyMessage?.id 
+        }) 
+        if (replyMessage) setReplyMessage(null)
       }
 
       setDraftValue(initialValue)
@@ -297,6 +301,8 @@ export const MessageInput = ({ chatId }: { chatId: string }) => {
     setEditingMessage,
     handleUpdate,
     handleSend,
+    replyMessage,
+    setReplyMessage,
   ])
 
   const onSlateChange = (value: Descendant[]) => {
@@ -422,6 +428,29 @@ export const MessageInput = ({ chatId }: { chatId: string }) => {
           </button>
         </div>
       )}
+
+      {replyMessage && (
+        <div className="flex items-center gap-3 px-6 py-2 bg-slate-100/50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-700/50 animate-in slide-in-from-bottom-2">
+          <div className="text-sky-500">
+            <Reply className="w-5 h-5" />
+          </div>
+          <div className="flex-1 min-w-0 border-l-2 border-sky-500 pl-3">
+            <div className="text-[12px] font-bold text-sky-500 leading-tight">
+              Ответ пользователю
+            </div>
+            <div className="text-sm text-slate-500 dark:text-slate-400 truncate">
+              {replyMessage.content}
+            </div>
+          </div>
+          <button 
+            onClick={() => setReplyMessage(null)}
+            className="text-slate-500 hover:text-slate-300 transition-colors"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+      )}
+
       <div className="flex items-center gap-3 px-6 py-3">
         <div 
           className="relative flex items-center justify-center"

@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import type { ModalMode, UiChatActive } from '../types'
+import type { Message, ModalMode, UiChatActive } from '../types'
 import { useAuthStore } from './authStore'
 import { setManualUnreadStatus } from '../api/chats'
 import { queryClient } from '../api/queryClient'
@@ -22,6 +22,8 @@ interface ChatState {
   closeModal: () => void
   manualUnread: Record<string, boolean>,
   setManualUnread: (chatId: string, value: boolean) => void,
+  replyMessage: Message | null
+  setReplyMessage: (msg: Message | null) => void
 }
 
 export const useChatStore = create<ChatState>((set) => ({
@@ -53,7 +55,10 @@ export const useChatStore = create<ChatState>((set) => ({
   },
   setSidebarVisible: (visible) => set({ sidebarVisible: visible }),
   editingMessage: null,
-  setEditingMessage: (msg) => set({ editingMessage: msg }),
+  setEditingMessage: (msg) => set({
+    editingMessage: msg,
+    replyMessage: null,
+  }),
   modalMode: null,
   openModal: (mode) => set({ modalMode: mode }),
   closeModal: () => set({ modalMode: null }),
@@ -61,4 +66,9 @@ export const useChatStore = create<ChatState>((set) => ({
   setManualUnread: (chatId, value) => set((state) => ({
     manualUnread: { ...state.manualUnread, [chatId]: value }
   })),
+  replyMessage: null,
+  setReplyMessage: (msg) => set({ 
+    replyMessage: msg, 
+    editingMessage: null
+  }),
 }))

@@ -50,6 +50,7 @@ export const sendMessage = async (
   senderId: string,
   content: string,
   imageUrl?: string,
+  reply_to_id?: string | null,
 ) => {
   const { data, error } = await supabase
     .from('messages')
@@ -58,7 +59,8 @@ export const sendMessage = async (
       sender_id: senderId,
       content,
       image_url: imageUrl,
-      read: false
+      read: false,
+      reply_to_id,
     }])
     .select()
     .single()
