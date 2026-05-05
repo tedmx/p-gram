@@ -24,6 +24,11 @@ interface ChatState {
   setManualUnread: (chatId: string, value: boolean) => void,
   replyMessage: Message | null
   setReplyMessage: (msg: Message | null) => void
+  forwardingMessage: Message | null
+  setForwardingMessage: (msg: Message | null) => void
+  selectedForwardChats: string[] // ID выбранных чатов в модалке
+  toggleForwardChat: (chatId: string) => void
+  resetForwarding: () => void
 }
 
 export const useChatStore = create<ChatState>((set) => ({
@@ -58,6 +63,7 @@ export const useChatStore = create<ChatState>((set) => ({
   setEditingMessage: (msg) => set({
     editingMessage: msg,
     replyMessage: null,
+    forwardingMessage: null, // Сбрасываем форвард при редактировании
   }),
   modalMode: null,
   openModal: (mode) => set({ modalMode: mode }),
@@ -69,6 +75,25 @@ export const useChatStore = create<ChatState>((set) => ({
   replyMessage: null,
   setReplyMessage: (msg) => set({ 
     replyMessage: msg, 
-    editingMessage: null
+    editingMessage: null,
+    forwardingMessage: null,
+  }),
+  forwardingMessage: null,
+  setForwardingMessage: (msg) => set({
+    forwardingMessage: msg,
+    replyMessage: null,
+    editingMessage: null,
+    selectedForwardChats: [],
+  }),
+  selectedForwardChats: [],
+  toggleForwardChat: (chatId) => set((state) => ({
+    selectedForwardChats: state.selectedForwardChats.includes(chatId)
+      ? state.selectedForwardChats.filter(id => id !== chatId)
+      : [...state.selectedForwardChats, chatId]
+  })),
+  resetForwarding: () => set({
+    forwardingMessage: null,
+    selectedForwardChats: [],
+    modalMode: null
   }),
 }))

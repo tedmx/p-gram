@@ -19,6 +19,7 @@ export interface Message {
   read: boolean
   reply_to_id?: string | null
   is_sending?: boolean
+  forwarded_from_id?: string | null
 }
 
 export type ChatType = 'direct' | 'group' | 'channel'
@@ -82,4 +83,4 @@ export interface SingleEmojiData {
   name: string;
 }
 
-export type ModalMode = 'chat-info' | 'my-profile' | null
+export type ModalMode = 'chat-info' | 'my-profile' | 'forward' | null

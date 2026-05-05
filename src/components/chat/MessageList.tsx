@@ -9,7 +9,7 @@ import { EmojiText } from '../ui/EmojiText'
 import { GenericMenu } from '../ui/GenericMenu'
 
 import type { Message, Profile } from '../../types'
-import { Pencil, Reply, Trash2 } from 'lucide-react'
+import { Forward, Pencil, Reply, Trash2 } from 'lucide-react'
 import { supabase } from '../../api/supabase'
 
 interface MessageListProps {
@@ -20,7 +20,14 @@ export const MessageList = ({ chatId }: MessageListProps) => {
   const currentUser = useAuthStore(state => state.user)
   const queryClient = useQueryClient()
 
-  const { editingMessage, setEditingMessage, setReplyMessage } = useChatStore()
+  const {
+    editingMessage,
+    setEditingMessage,
+    setReplyMessage,
+    setForwardingMessage,
+    openModal,
+  } = useChatStore()
+
   const [menuPosition, setMenuPosition] = useState<{
     x: number,
     y: number,
@@ -234,6 +241,19 @@ export const MessageList = ({ chatId }: MessageListProps) => {
                     onClick={() => window.open(msg.image_url, '_blank')}
                   />
                 )}
+
+                {/* Блок пересылки (Forwarded) */}
+                {msg.forwarded_from_id && (
+                  <div className={`
+                    flex items-center gap-1.5 mb-1 opacity-80
+                    ${msg.sender_id === currentUser?.id ? 'text-sky-100' : 'text-sky-500 dark:text-sky-400'}
+                  `}>
+                    <span className="text-[11px] font-medium uppercase tracking-wider italic">
+                      Forwarded message
+                    </span>
+                  </div>
+                )}
+
                 <EmojiText text={msg.content} />
                 <div className={`
                   float-right mt-2 ml-2 flex items-center gap-1
@@ -284,6 +304,16 @@ export const MessageList = ({ chatId }: MessageListProps) => {
                 label: 'Редактировать',
                 icon: Pencil,
                 onClick: () => setEditingMessage({ id: menuPosition.msg.id, content: menuPosition.msg.content })
+              },
+              // НОВЫЙ ПУНКТ
+              {
+                label: 'Переслать',
+                icon: Forward,
+                onClick: () => {
+                  setForwardingMessage(menuPosition.msg)
+                  openModal('forward') 
+                  setMenuPosition(null)
+                }
               },
               {
                 label: 'Удалить',

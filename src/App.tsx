@@ -11,6 +11,7 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { UserProfileModal } from './components/ui/UserProfileModal'
 import { useProfile } from './hooks/useProfile'
 import { ChatHeader } from './components/chat/ChatHeader'
+import { ForwardModal } from './components/chat/ForwardModal'
 
 function App() {
   useAuth() // Запускаем отслеживание сессии
@@ -116,6 +117,7 @@ function App() {
               isMyProfile={false}
             />
           )}
+          {modalMode === 'forward' && <ForwardModal />}
         </MainLayout>
       ) : (
         <AuthForm />

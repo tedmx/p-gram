@@ -51,6 +51,7 @@ export const sendMessage = async (
   content: string,
   imageUrl?: string,
   reply_to_id?: string | null,
+  forwarded_from_id?: string | null,
 ) => {
   const { data, error } = await supabase
     .from('messages')
@@ -61,6 +62,7 @@ export const sendMessage = async (
       image_url: imageUrl,
       read: false,
       reply_to_id,
+      forwarded_from_id,
     }])
     .select()
     .single()
