@@ -3,7 +3,14 @@ import { supabase } from './supabase'
 export const getMessages = async (chatId: string) => {
   const { data, error } = await supabase
     .from('messages')
-    .select('*')
+    .select(`
+      *,
+      reactions:message_reactions(
+        emoji, 
+        user_id,
+        profiles:profiles!fk_reactions_profile(username, avatar_url, avatar_color)
+      )
+    `)
     .eq('chat_id', chatId)
     .order('created_at', { ascending: true })
 
@@ -114,4 +121,21 @@ export const markChatAsRead = async (chatId: string, userId: string) => {
     .eq('read', false)
 
   if (error) console.error('Error marking as read:', error)
+}
+
+export const toggleReaction = async (
+  messageId: string,
+  userId: string,
+  emoji: string
+) => {
+  const { error } = await supabase.rpc('toggle_message_reaction', {
+    p_message_id: messageId,
+    p_user_id: userId,
+    p_emoji: emoji
+  })
+
+  if (error) {
+    console.error('Error toggling reaction:', error)
+    throw error
+  }
 }

@@ -1,16 +1,23 @@
-import { useQuery, useMutation, useQueryClient  } from '@tanstack/react-query'
-import { useAuthStore } from '../../store/authStore'
+
 import { useEffect, useMemo, useRef, useState } from 'react'
+
+import { useQuery, useMutation, useQueryClient  } from '@tanstack/react-query'
+import { supabase } from '../../api/supabase'
+
+import { useAuthStore } from '../../store/authStore'
 import { useChatStore } from '../../store/chatStore'
 import { SentIcon, ReadIcon } from './ReadStatus'
 import { getMessages, deleteMessage, markAsRead, markChatAsRead } from '../../api/messages'
+import { toggleReaction } from '../../api/messages'
+import { ReactionBadge } from './ReactionBadge'
+import { ReactionPicker } from './ReactionPicker'
+
 import { Modal } from '../ui/Modal'
 import { EmojiText } from '../ui/EmojiText'
 import { GenericMenu } from '../ui/GenericMenu'
+import { Forward, Pencil, Reply, Smile, Trash2 } from 'lucide-react'
 
 import type { Message, Profile } from '../../types'
-import { Forward, Pencil, Reply, Trash2 } from 'lucide-react'
-import { supabase } from '../../api/supabase'
 
 interface MessageListProps {
   chatId: string
@@ -35,6 +42,9 @@ export const MessageList = ({ chatId }: MessageListProps) => {
   } | null>(null)
   const [messageToDelete, setMessageToDelete] = useState<string | null>(null)
   const [deleteForEveryone, setDeleteForEveryone] = useState(false)
+
+  const [reactionTarget, setReactionTarget] = useState<string | null>(null) // ID сообщения для пикера
+  const [pickerPosition, setPickerPosition] = useState<{ x: number; y: number } | null>(null)
 
   const handleContextMenu = (e: React.MouseEvent, msg: Message) => {
     e.preventDefault()
@@ -144,55 +154,79 @@ export const MessageList = ({ chatId }: MessageListProps) => {
   }, [activeChatId, messages, currentUser.id, queryClient]) 
 
   useEffect(() => {
-  if (!chatId) return
+    if (!chatId) return
 
-  // 1. Создаем канал для конкретного чата
-  const channel = supabase
-    .channel(`chat-room-${chatId}`)
-    .on(
-      'postgres_changes',
-      {
-        event: '*', // Слушаем INSERT, UPDATE, DELETE
-        schema: 'public',
-        table: 'messages',
-        filter: `chat_id=eq.${chatId}`,
-      },
-      (payload) => {
-        const { eventType, new: newMessage, old: oldMessage } = payload
+    // Создаем канал для конкретного чата
+    const channel = supabase
+      .channel(`chat-room-${chatId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*', // Слушаем INSERT, UPDATE, DELETE
+          schema: 'public',
+          table: 'messages',
+          filter: `chat_id=eq.${chatId}`,
+        },
+        (payload) => {
+          const { eventType, new: newMessage, old: oldMessage } = payload
 
-        if (eventType === 'INSERT') {
-          // Мгновенно добавляем новое сообщение в список
-          queryClient.setQueryData(['messages', chatId], (old: Message[] = []) => {
-            // Проверка, чтобы не дублировать сообщения (если сработал Optimistic Update)
-            if (old.some(m => m.id === newMessage.id)) return old
-            return [...old, newMessage]
-          })
+          if (eventType === 'INSERT') {
+            // Мгновенно добавляем новое сообщение в список
+            queryClient.setQueryData(['messages', chatId], (old: Message[] = []) => {
+              // Проверка, чтобы не дублировать сообщения (если сработал Optimistic Update)
+              if (old.some(m => m.id === newMessage.id)) return old
+              return [...old, newMessage]
+            })
+          }
+
+          if (eventType === 'UPDATE') {
+            // Обновляем существующее сообщение (прочитано/ред.)
+            queryClient.setQueryData(['messages', chatId], (old: Message[] = []) =>
+              old.map((m) => (m.id === newMessage.id ? { ...m, ...newMessage } : m))
+            )
+          }
+
+          if (eventType === 'DELETE') {
+            queryClient.setQueryData(['messages', chatId], (old: Message[] = []) => {
+              // Используем payload.old.id, так как в 'old' при удалении часто только ID
+              const deletedId = oldMessage?.id || (payload.old as { id: string }).id
+              return old.filter((m) => m.id !== deletedId)
+            })
+          }
+
+          queryClient.invalidateQueries({ queryKey: ['my-chats'] })
         }
-
-        if (eventType === 'UPDATE') {
-          // Обновляем существующее сообщение (прочитано/ред.)
-          queryClient.setQueryData(['messages', chatId], (old: Message[] = []) =>
-            old.map((m) => (m.id === newMessage.id ? { ...m, ...newMessage } : m))
-          )
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*', // Слушаем insert и delete
+          schema: 'public',
+          table: 'message_reactions'
+        },
+        () => {
+          // При любом изменении реакций просто просим React Query обновить сообщения
+          // Так как мы изменили getMessages, новые реакции прилетят вместе с ними
+          queryClient.invalidateQueries({ queryKey: ['messages', chatId] })
         }
+      )
+      .subscribe()
 
-        if (eventType === 'DELETE') {
-          queryClient.setQueryData(['messages', chatId], (old: Message[] = []) => {
-            // Используем payload.old.id, так как в 'old' при удалении часто только ID
-            const deletedId = oldMessage?.id || (payload.old as { id: string }).id
-            return old.filter((m) => m.id !== deletedId)
-          })
-        }
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [chatId, queryClient])
 
-        queryClient.invalidateQueries({ queryKey: ['my-chats'] })
-      }
-    )
-    .subscribe()
-
-  return () => {
-    supabase.removeChannel(channel)
+  const handleToggleReaction = async (messageId: string, emoji: string) => {
+    if (!currentUser) return
+    try {
+      await toggleReaction(messageId, currentUser.id, emoji)
+      // Обновляем кэш вручную (или ждем Realtime)
+      queryClient.invalidateQueries({ queryKey: ['messages', chatId] })
+    } catch (err) {
+      console.error(err)
+    }
   }
-}, [chatId, queryClient])
 
   if (isLoading) return <div className="p-4 text-slate-500 text-center">Загрузка сообщений...</div>
 
@@ -201,7 +235,7 @@ export const MessageList = ({ chatId }: MessageListProps) => {
       ref={scrollRef} 
       className="flex-1 overflow-y-auto p-4 space-y-3 flex flex-col scrollbar-thin scrollbar-thumb-slate-800 scroll-smooth w-full"
     >
-      <div className="mx-auto w-full max-w-182 [@media(min-width:1921px)]:max-w-[50vw] space-y-4">
+      <div className="mx-auto w-full max-w-182 [@media(min-width:1921px)]:max-w-[40vw] space-y-4">
         {messages?.map((msg) => {
           const isMine = msg.sender_id === currentUser?.id
           return (
@@ -255,6 +289,13 @@ export const MessageList = ({ chatId }: MessageListProps) => {
                 )}
 
                 <EmojiText text={msg.content} />
+
+                <ReactionBadge 
+                  reactions={msg.reactions || []} 
+                  currentUserId={currentUser?.id}
+                  onToggle={(emoji) => handleToggleReaction(msg.id, emoji)}
+                />
+
                 <div className={`
                   float-right mt-2 ml-2 flex items-center gap-1
                   ${isMine
@@ -305,7 +346,6 @@ export const MessageList = ({ chatId }: MessageListProps) => {
                 icon: Pencil,
                 onClick: () => setEditingMessage({ id: menuPosition.msg.id, content: menuPosition.msg.content })
               },
-              // НОВЫЙ ПУНКТ
               {
                 label: 'Переслать',
                 icon: Forward,
@@ -320,7 +360,16 @@ export const MessageList = ({ chatId }: MessageListProps) => {
                 icon: Trash2,
                 isDestructive: true,
                 onClick: () => setMessageToDelete(menuPosition.msg.id)
-              }
+              },
+              {
+                label: 'Поставить реакцию',
+                icon: Smile,
+                onClick: () => {
+                  setPickerPosition({ x: menuPosition.x, y: menuPosition.y })
+                  setReactionTarget(menuPosition.msg.id)
+                  setMenuPosition(null)
+                }
+              },
             ]}
           />
         )}
@@ -365,6 +414,34 @@ export const MessageList = ({ chatId }: MessageListProps) => {
             </button>
           </div>
         </Modal>
+
+        {reactionTarget && pickerPosition && (
+          <div 
+            className="fixed inset-0 z-50" 
+            onClick={() => {
+              setReactionTarget(null)
+              setPickerPosition(null)
+            }}
+          >
+            <div 
+              className="absolute" 
+              style={{ top: pickerPosition.y - 40, left: pickerPosition.x }} 
+              onClick={e => e.stopPropagation()}
+            >
+              <ReactionPicker 
+                onSelect={(emoji) => {
+                  handleToggleReaction(reactionTarget, emoji)
+                  setReactionTarget(null)
+                  setPickerPosition(null)
+                }}
+                onClose={() => {
+                  setReactionTarget(null)
+                  setPickerPosition(null)
+                }}
+              />
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )

@@ -1,4 +1,5 @@
 import emojiRegex from 'emoji-regex'
+import { getAppleEmojiUrl } from '../../utils/emoji'
 
 interface EmojiTextProps {
   text: string
@@ -31,7 +32,7 @@ export const EmojiText = ({ text, className = '' }: EmojiTextProps) => {
       .filter((hex) => hex !== 'fe0f')
       .join('-')
 
-    const emojiUrl = `https://cdn.jsdelivr.net/npm/emoji-datasource-apple/img/apple/64/${hexCode}.png`
+    const emojiUrl = getAppleEmojiUrl(emoji)
 
     parts.push(
       <img

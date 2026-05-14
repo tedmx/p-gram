@@ -10,6 +10,16 @@ export interface Profile {
   birthday?: string   // День рождения
 }
 
+export interface MessageReaction {
+  emoji: string
+  user_id: string
+  profiles?: {
+    username: string | null
+    avatar_url: string | null
+    avatar_color: string | null
+  } | null
+}
+
 export interface Message {
   id: string
   chat_id: string
@@ -20,6 +30,7 @@ export interface Message {
   reply_to_id?: string | null
   is_sending?: boolean
   forwarded_from_id?: string | null
+  reactions?: MessageReaction[] 
 }
 
 export type ChatType = 'direct' | 'group' | 'channel'
