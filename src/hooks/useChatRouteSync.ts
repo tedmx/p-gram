@@ -42,6 +42,7 @@ export function useChatRouteSync(myChats: UiChat[] | undefined) {
       avatar_url: targetChat.avatar_url,
       avatar_color: targetChat.avatar_color,
       participants: targetChat.participants,
+      is_manual_unread: targetChat.is_manual_unread,
     })
   }, [activeChatId, chatIdFromPath, myChats, navigate, setActiveChat])
 }

@@ -151,7 +151,7 @@ export const MessageList = ({ chatId }: MessageListProps) => {
         queryClient.invalidateQueries({ queryKey: ['my-chats'] })
       })
     }
-  }, [activeChatId, messages, currentUser.id, queryClient]) 
+  }, [activeChatId, messages, currentUser, queryClient]) 
 
   useEffect(() => {
     if (!chatId) return

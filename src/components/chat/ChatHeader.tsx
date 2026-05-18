@@ -9,6 +9,8 @@ import { useState } from 'react'
 import { useAuthStore } from '../../store/authStore'
 import { setManualUnreadStatus } from '../../api/chats'
 import { Bookmark, Info, MessageSquareCheck, MessageSquareDot } from 'lucide-react'
+import { formatLastSeen } from '../../utils/presence'
+import type { Profile } from '../../types'
 
 export const ChatHeader = () => {
   const navigate = useNavigate()
@@ -59,13 +61,17 @@ export const ChatHeader = () => {
       label: isCurrentlyUnread ? 'Пометить прочитанным' : 'Пометить непрочитанным',
       icon: isCurrentlyUnread ? MessageSquareCheck : MessageSquareDot,
       onClick: async () => {
+        if (!user || !activeChatData) return
+
         const newStatus = !isCurrentlyUnread
         
         // 1. Отправляем запрос в БД
         await setManualUnreadStatus(activeChatId, user.id, newStatus)
 
+        const unreadCount = activeChatData.unread_count || 0
+
         // 2. Если помечаем прочитанным и есть реальные сообщения — гасим их как раньше
-        if (isCurrentlyUnread && activeChatData.unread_count > 0) {
+        if (isCurrentlyUnread && unreadCount > 0) {
           await markChatAsRead(activeChatId, user.id)
         }
 
@@ -79,6 +85,19 @@ export const ChatHeader = () => {
       onClick: () => openModal('chat-info')
     }
   ]
+
+  // Находим профиль собеседника для личных чатов (direct)
+  const companionProfile = activeChatData?.type === 'direct'
+    ? activeChatData.participants?.find((p: Profile) => p.id !== user?.id)
+    : null
+
+  // Определяем статус на основе поля last_seen из профиля собеседника
+  const presenceStatus = companionProfile?.last_seen 
+    ? formatLastSeen(companionProfile.last_seen)
+    : 'был(а) давно'
+
+  // Проверяем, является ли статус строкой "в сети", для подкраски
+  const isOnline = presenceStatus === 'в сети'
 
   return (
     <header className="h-16 bg-white dark:bg-slate-900 w-full flex items-center shrink-0 border-b dark:border-slate-800">
@@ -119,7 +138,9 @@ export const ChatHeader = () => {
             <EmojiText text={title || 'Чат'} />
           </div>
           {!isSavedMessages && (
-            <div className="text-[10px] text-emerald-500">в сети</div>
+            <div className={`text-[10px] ${isOnline ? 'text-emerald-500' : 'text-slate-400 dark:text-slate-500'}`}>
+              {presenceStatus}
+            </div>
           )}
         </div>
       </button>

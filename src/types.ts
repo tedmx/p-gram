@@ -8,6 +8,7 @@ export interface Profile {
   avatar_color: string | null
   bio?: string        // Краткая биография
   birthday?: string   // День рождения
+  last_seen?: string | null
 }
 
 export interface MessageReaction {

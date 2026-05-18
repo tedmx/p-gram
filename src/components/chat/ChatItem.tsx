@@ -44,6 +44,8 @@ export const ChatItem = ({ chat, isActive, currentUserId }: ChatItemProps) => {
       label: isCurrentlyUnread ? 'Пометить прочитанным' : 'Пометить непрочитанным',
       icon: isCurrentlyUnread ? MessageSquareCheck : MessageSquareDot,
       onClick: async () => {
+        if (!currentUserId) return
+
         const newStatus = !isCurrentlyUnread
         
         // 1. Отправляем запрос в БД
@@ -128,7 +130,14 @@ export const ChatItem = ({ chat, isActive, currentUserId }: ChatItemProps) => {
             text-[14px] truncate flex-1
             ${isActive ? 'text-sky-100' : 'text-slate-500 dark:text-slate-400'}
           `}>
-            {chat.lastMessage?.content || 'Нет сообщений'}
+            {chat.lastMessage?.content ? (
+              <EmojiText 
+                text={chat.lastMessage.content} 
+                className="truncate" 
+              />
+            ) : (
+              <span className="italic opacity-60">Нет сообщений</span>
+            )}
           </div>
 
           {showUnread && (

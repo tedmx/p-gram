@@ -1,15 +1,19 @@
-import { AuthForm } from './components/auth/AuthForm'
-import { useAuth } from './hooks/useAuth'
+import { useEffect, useMemo, useState } from 'react'
+import { useLocation, useNavigate } from 'react-router-dom'
+
+import { useChatStore } from './store/chatStore'
 import { useAuthStore } from './store/authStore'
+
+import { useAuth } from './hooks/useAuth'
+import { useProfile } from './hooks/useProfile'
+import { usePresence } from './hooks/usePresence'
+
+import { AuthForm } from './components/auth/AuthForm'
 import { MainLayout } from './components/layout/MainLayout' // Добавляем импорт
 import { Sidebar } from './components/layout/Sidebar'
 import { MessageList } from './components/chat/MessageList'
 import { MessageInput } from './components/chat/MessageInput'
-import { useChatStore } from './store/chatStore'
-import { useEffect, useMemo, useState } from 'react'
-import { useLocation, useNavigate } from 'react-router-dom'
 import { UserProfileModal } from './components/ui/UserProfileModal'
-import { useProfile } from './hooks/useProfile'
 import { ChatHeader } from './components/chat/ChatHeader'
 import { ForwardModal } from './components/chat/ForwardModal'
 
@@ -26,6 +30,8 @@ function App() {
 
   const modalMode = useChatStore(state => state.modalMode)
   const closeModal = useChatStore(state => state.closeModal)
+
+  usePresence()
 
   const chatPartner = useMemo(() => {
     if (!activeChatData || !user) return null
